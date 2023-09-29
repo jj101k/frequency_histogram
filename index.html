@@ -7,38 +7,9 @@
         <p>Import EPW data <input type="file" id="import"/></p>
         <script src="histogram.js"></script>
         <script src="histogramRender.js"></script>
+        <script src="epwParser.js"></script>
         <p id="graph-container">
         </p>
-        <script>
-            const hr = new HistogramRender(document.querySelector("#graph-container"))
-            /** @type {HTMLInputElement} */
-            const e = document.querySelector("#import")
-            e.onchange = async function() {
-                if(e.files) {
-                    const fr = new FileReader()
-                    fr.onload = () => {
-                        if(typeof fr.result != "string") throw new Error("Wrong result type?")
-                        // console.log(fr.result)
-                        const trimmedResult = fr.result.split(/\nDATA PERIODS,.*\r\n/)[1]
-                        let i = 0
-                        const r = trimmedResult.replace(/\r?\n$/, "").split(/\r?\n/).map(
-                            c => {
-                                const f = c.split(/,/)
-                                const t = +f[6]
-                                if(Number.isNaN(t)) {
-                                    throw new Error(`NaN on: ${c}`)
-                                }
-                                return {x: i++, y: t}
-                            }
-                        ) // .slice(0, 96)
-                        console.log(r)
-                        const h = new Histogram(r, 0.05)
-
-                        hr.render(h)
-                    }
-                    fr.readAsText(e.files[0])
-                }
-            }
-        </script>
+        <script src="main.js"></script>
     </body>
 </html>
