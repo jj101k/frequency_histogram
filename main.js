@@ -6,7 +6,7 @@ e.onchange = async function() {
         const fr = new FileReader()
         fr.onload = () => {
             if(typeof fr.result != "string") throw new Error("Wrong result type?")
-            const r = new EpwParser(fr.result).dryBulbValues
+            const r = new EpwParser(fr.result).getValues("dewPoint")
             console.log(r)
             const h = new Histogram(r, 0.05)
 
