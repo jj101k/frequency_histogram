@@ -1,3 +1,5 @@
+//@ts-check
+
 /**
  *
  */
@@ -7,7 +9,7 @@ class Histogram {
      */
     #dataPoints
     /**
-     * @type {{x: number, dF: number}[]}
+     * @type {{y: number, dF: number}[]}
      */
     #deltas
     /**
