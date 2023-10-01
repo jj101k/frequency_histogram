@@ -96,6 +96,29 @@ class Histogram {
         const deltas = []
         let lastY = dataPoints[0].y ?? 0
         let lastX = dataPoints[0].x
+
+        /**
+         * @type {Set<number>}
+         */
+        const yValues = new Set()
+        for(const dataPoint of dataPoints) {
+            if(dataPoint.y !== null && dataPoint.y !== undefined) {
+                yValues.add(dataPoint.y)
+            }
+        }
+        let realMinDeltaY = Infinity
+        const yValuesOrdered = [...yValues].sort((a, b) => a - b)
+        let lastYValue = yValuesOrdered[0]
+        for(const yValue of yValuesOrdered.slice(1)) {
+            const deltaY = yValue - lastYValue
+            if(deltaY < realMinDeltaY) {
+                realMinDeltaY = deltaY
+            }
+            lastYValue = yValue
+        }
+
+        const minDeltaY = realMinDeltaY / 2
+
         for(let i = 1; i < dataPoints.length; i++) {
             const dataPoint = dataPoints[i]
             if(dataPoint.y === null || dataPoint.y === undefined) {
@@ -113,13 +136,10 @@ class Histogram {
              * @type {number}
              */
             let dY
-            if(Math.abs(dataPoint.y - lastY) < this.#minDeltaY) {
-                lastY = dataPoint.y
-                lastX = dataPoint.x
-                continue
-                // lY = Math.min(dataPoint.y, lastY)
-                // hY = lY + this.#minDeltaY
-                // dY = this.#minDeltaY
+            if(Math.abs(dataPoint.y - lastY) < minDeltaY) {
+                lY = Math.min(dataPoint.y, lastY)
+                hY = lY + minDeltaY
+                dY = minDeltaY
             } else {
                 if(dataPoint.y < lastY) {
                     lY = dataPoint.y

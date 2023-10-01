@@ -18,7 +18,7 @@ class HistogramRender {
     #svg
 
     /**
-     * @type {EpwNamedField}
+     * @type {EpwNamedNumberField}
      */
     #field
 
@@ -76,8 +76,8 @@ class HistogramRender {
         }
         this.histogram.field = this.#field
         const cumulativeDeltas = this.histogram.cumulativeDeltas
-        let lastPos = {y: cumulativeDeltas[0].y - 0.1, fV: 0}
-        let dA = `M ${lastPos.y} ${lastPos.fV}`
+        const firstPos = {y: cumulativeDeltas[0].y - 0.1, fV: 0}
+        let dA = `M ${firstPos.y} ${firstPos.fV}`
         let minX = cumulativeDeltas[0].y
         let maxX = cumulativeDeltas[cumulativeDeltas.length - 1].y
         let minY = 0
@@ -95,18 +95,36 @@ class HistogramRender {
             }
         }
 
+        const renderSquare = cumulativeDeltas.length < 20
+
         const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
 
-        for(const d of cumulativeDeltas) {
-            const v = -d.f * rescale // -Math.log(d.f)
-            const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
-            lastPos = {y: d.y, fV: v}
-            dA += " " + lA
-            if(v > maxY) {
-                maxY = v
+        if(renderSquare) {
+            let lastPos = firstPos
+            for(const d of cumulativeDeltas) {
+                const v = -d.f * rescale // -Math.log(d.f)
+                const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
+                lastPos = {y: d.y, fV: v}
+                dA += " " + lA
+                if(v > maxY) {
+                    maxY = v
+                }
+                if(v < minY) {
+                    minY = v
+                }
             }
-            if(v < minY) {
-                minY = v
+        } else {
+            for(const d of cumulativeDeltas) {
+                const v = -d.f * rescale // -Math.log(d.f)
+                const lA = `L ${d.y},${v}`
+                console.log(lA)
+                dA += " " + lA
+                if(v > maxY) {
+                    maxY = v
+                }
+                if(v < minY) {
+                    minY = v
+                }
             }
         }
 
