@@ -354,7 +354,7 @@ const EpwFields = (() => {
         ConstrainedNumber("Aerosol Optical Depth", { units: "thousandths", missing: .999 }),
         ConstrainedNumber("Snow Depth", { units: "cm", missing: 999 }),
         ConstrainedNumber("Days Since Last Snowfall", { missing: 99 }),
-        ConstrainedNumber("albedo", { missing: 999 }),
+        ConstrainedNumber("Albedo", { missing: 999 }),
         ConstrainedNumber("Liquid Precipitation Depth", { units: "mm", missing: 999 }),
         ConstrainedNumber("Liquid Precipitation Quantity", { units: "hr", missing: 99 }),
     ]
