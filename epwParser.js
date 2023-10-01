@@ -26,7 +26,8 @@ class EpwRow {
 
     /**
      *
-     * @param {EpwNamedField} field
+     * @template {any} T
+     * @param {EpwNamedField<T>} field
      */
     get(field) {
         return field.parse(this.#lineParts)
@@ -61,7 +62,7 @@ class EpwParser {
 
     /**
      *
-     * @param {EpwNamedField} field
+     * @param {EpwNamedField<number | null>} field
      */
     getValues(field) {
         const r = this.rows.map(

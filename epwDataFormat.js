@@ -151,6 +151,7 @@ class EpwNumberField extends EpwBaseNumberField {
 
 /**
  * @abstract
+ * @template T
  */
 class EpwNamedField {
     /**
@@ -158,14 +159,14 @@ class EpwNamedField {
      */
     #offset
     /**
-     * @type {EpwField<any> | undefined}
+     * @type {EpwField<T> | undefined}
      */
     #parser
 
     /**
      * @abstract
      * @protected
-     * @returns {EpwField<any> | undefined}
+     * @returns {EpwField<T> | undefined}
      */
     getParser() {
         throw new Error("Not implemented")
@@ -210,7 +211,7 @@ class EpwNamedField {
 }
 
 /**
- *
+ * @abstract
  */
 class EpwNamedNumberField extends EpwNamedField {
     /**
@@ -218,6 +219,14 @@ class EpwNamedNumberField extends EpwNamedField {
      */
     get units() {
         return undefined
+    }
+
+    /**
+     * @abstract
+     * @returns {EpwBaseNumberField | undefined}
+     */
+    getParser() {
+        throw new Error("Not implemented")
     }
 }
 

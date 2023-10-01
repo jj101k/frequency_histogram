@@ -10,7 +10,7 @@ class Histogram {
     #deltas
 
     /**
-     * @type {EpwNamedField}
+     * @type {EpwNamedNumberField}
      */
     #field
 
@@ -94,7 +94,13 @@ class Histogram {
         const dataPoints = this.#parser.getValues(this.field)
         // Presume sorted in x
         const deltas = []
+        let lastY = dataPoints[0].y ?? 0
+        let lastX = dataPoints[0].x
         for(let i = 1; i < dataPoints.length; i++) {
+            const dataPoint = dataPoints[i]
+            if(dataPoint.y === null || dataPoint.y === undefined) {
+                continue
+            }
             /**
              * @type {number}
              */
@@ -107,28 +113,33 @@ class Histogram {
              * @type {number}
              */
             let dY
-            if(Math.abs(dataPoints[i].y - dataPoints[i-1].y) < this.#minDeltaY) {
+            if(Math.abs(dataPoint.y - lastY) < this.#minDeltaY) {
+                lastY = dataPoint.y
+                lastX = dataPoint.x
                 continue
-                lY = Math.min(dataPoints[i].y, dataPoints[i-1].y)
-                hY = lY + this.#minDeltaY
-                dY = this.#minDeltaY
+                // lY = Math.min(dataPoint.y, lastY)
+                // hY = lY + this.#minDeltaY
+                // dY = this.#minDeltaY
             } else {
-                if(dataPoints[i].y < dataPoints[i-1].y) {
-                    lY = dataPoints[i].y
-                    hY = dataPoints[i-1].y
+                if(dataPoint.y < lastY) {
+                    lY = dataPoint.y
+                    hY = lastY
                 } else {
-                    lY = dataPoints[i-1].y
-                    hY = dataPoints[i].y
+                    lY = lastY
+                    hY = dataPoint.y
                 }
                 dY = hY - lY
             }
-            const dX = dataPoints[i].x - dataPoints[i-1].x
+            const dX = dataPoint.x - lastX
             // Push ADD and REMOVE.
             // We consider it to go UP at lY, go down at hY; and we consider
             // the height to be dX/dY' where dY' = max(dY, minDelta)
             const h = dX / dY
             deltas.push({y: lY, dF: h})
             deltas.push({y: hY, dF: -h})
+
+            lastY = dataPoint.y
+            lastX = dataPoint.x
         }
         deltas.sort((a, b) => a.y - b.y)
 
