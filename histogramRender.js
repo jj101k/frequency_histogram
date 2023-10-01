@@ -98,11 +98,9 @@ class HistogramRender {
         const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
 
         for(const d of cumulativeDeltas) {
-            console.log(`${d.y} = ${Math.round(d.f)}`)
             const v = -d.f * rescale // -Math.log(d.f)
             const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
             lastPos = {y: d.y, fV: v}
-            // console.log(lA)
             dA += " " + lA
             if(v > maxY) {
                 maxY = v
