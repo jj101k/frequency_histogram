@@ -74,7 +74,7 @@ class HistogramRender {
         if(!this.#svg || !this.#path) {
             [this.#path, this.#svg] = this.#init()
         }
-        this.histogram.field = this.#field
+        this.histogram.fieldInfo = {field: this.#field}
         const cumulativeDeltas = this.histogram.cumulativeDeltas
         const firstPos = {y: cumulativeDeltas[0].y - 0.1, fV: 0}
         let dA = `M ${firstPos.y} ${firstPos.fV}`

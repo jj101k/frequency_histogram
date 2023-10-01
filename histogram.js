@@ -10,14 +10,10 @@ class Histogram {
     #deltas
 
     /**
-     * @type {EpwNamedNumberField}
+     * @type {{field: EpwNamedNumberField, expectedMinResolution?: number | undefined}}
      */
-    #field
+    #fieldInfo
 
-    /**
-     *
-     */
-    #minDeltaY
     /**
      *
      */
@@ -82,42 +78,47 @@ class Histogram {
     /**
      *
      */
-    get field() {
-        return this.#field
+    get fieldInfo() {
+        return this.#fieldInfo
     }
-    set field(v) {
-        this.#field = v
+    set fieldInfo(v) {
+        this.#fieldInfo = v
         this.#deltas = undefined
     }
 
     getDeltas() {
-        const dataPoints = this.#parser.getValues(this.field)
+        const dataPoints = this.#parser.getValues(this.#fieldInfo.field)
+
+        let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
+        if(expectedMinDeltaY === undefined) {
+            /**
+             * @type {Set<number>}
+             */
+            const yValues = new Set()
+            for(const dataPoint of dataPoints) {
+                if(dataPoint.y !== null && dataPoint.y !== undefined) {
+                    yValues.add(dataPoint.y)
+                }
+            }
+            let realMinDeltaY = Infinity
+            const yValuesOrdered = [...yValues].sort((a, b) => a - b)
+            let lastYValue = yValuesOrdered[0]
+            for(const yValue of yValuesOrdered.slice(1)) {
+                const deltaY = yValue - lastYValue
+                if(deltaY < realMinDeltaY) {
+                    realMinDeltaY = deltaY
+                }
+                lastYValue = yValue
+            }
+
+            expectedMinDeltaY = realMinDeltaY
+        }
+        const zeroDeltaSpan = expectedMinDeltaY / 2
+
         // Presume sorted in x
         const deltas = []
         let lastY = dataPoints[0].y ?? 0
         let lastX = dataPoints[0].x
-
-        /**
-         * @type {Set<number>}
-         */
-        const yValues = new Set()
-        for(const dataPoint of dataPoints) {
-            if(dataPoint.y !== null && dataPoint.y !== undefined) {
-                yValues.add(dataPoint.y)
-            }
-        }
-        let realMinDeltaY = Infinity
-        const yValuesOrdered = [...yValues].sort((a, b) => a - b)
-        let lastYValue = yValuesOrdered[0]
-        for(const yValue of yValuesOrdered.slice(1)) {
-            const deltaY = yValue - lastYValue
-            if(deltaY < realMinDeltaY) {
-                realMinDeltaY = deltaY
-            }
-            lastYValue = yValue
-        }
-
-        const minDeltaY = realMinDeltaY / 2
 
         for(let i = 1; i < dataPoints.length; i++) {
             const dataPoint = dataPoints[i]
@@ -136,10 +137,10 @@ class Histogram {
              * @type {number}
              */
             let dY
-            if(Math.abs(dataPoint.y - lastY) < minDeltaY) {
+            if(Math.abs(dataPoint.y - lastY) < zeroDeltaSpan) {
                 lY = Math.min(dataPoint.y, lastY)
-                hY = lY + minDeltaY
-                dY = minDeltaY
+                hY = lY + zeroDeltaSpan
+                dY = zeroDeltaSpan
             } else {
                 if(dataPoint.y < lastY) {
                     lY = dataPoint.y
@@ -169,10 +170,8 @@ class Histogram {
     /**
      *
      * @param {EpwParser} parser
-     * @param {number} minDeltaY The narrowest width at which the data may be presented
      */
-    constructor(parser, minDeltaY) {
-        this.#minDeltaY = minDeltaY
+    constructor(parser) {
         this.#parser = parser
     }
 }
