@@ -18,10 +18,6 @@ class Histogram {
      *
      */
     #parser
-    /**
-     * @type {Set<number>}
-     */
-    #yValues
 
     /**
      *
@@ -86,6 +82,10 @@ class Histogram {
         this.#deltas = undefined
     }
 
+    /**
+     *
+     * @returns
+     */
     getDeltas() {
         const dataPoints = this.#parser.getValues(this.#fieldInfo.field)
 
