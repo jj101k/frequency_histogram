@@ -5,9 +5,14 @@
  */
 class Histogram {
     /**
-     * @type {{y: number, dF: number}[] | undefined}
+     *
      */
-    #deltas
+    #combineSubDelta
+
+    /**
+     * @type {{deltas: {y: number, dF: number}[], zeroDeltaSpan: number} | undefined}
+     */
+    #deltaInfo
 
     /**
      * @type {{field: EpwNamedNumberField, expectedMinResolution?: number | undefined}}
@@ -22,18 +27,19 @@ class Histogram {
     /**
      *
      */
-    get combinedDeltas() {
-        if(!this.#deltas) {
-            this.#deltas = this.getDeltas()
+    get combined() {
+        if(!this.#deltaInfo) {
+            this.#deltaInfo = this.getDeltas()
         }
         /**
          * @type {{y: number, dF: number}[]}
          */
         const combinedDeltas = []
-        if(this.#deltas.length) {
-            let last = {y: this.#deltas[0].y, dF: this.#deltas[0].dF}
+        const deltas = this.#deltaInfo.deltas
+        if(deltas.length) {
+            let last = {y: deltas[0].y, dF: deltas[0].dF}
             combinedDeltas.push(last)
-            for(const d of this.#deltas) {
+            for(const d of deltas) {
                 if(d.y == last.y) {
                     last.dF += d.dF
                 } else {
@@ -42,7 +48,7 @@ class Histogram {
                 }
             }
         }
-        return combinedDeltas
+        return {combinedDeltas, zeroDeltaSpan: this.#deltaInfo.zeroDeltaSpan}
     }
 
     /**
@@ -53,7 +59,8 @@ class Histogram {
          * @type {{y: number, f: number}[]}
          */
         const cumulativeDeltas = []
-        const combinedDeltas = this.combinedDeltas
+        const combined = this.combined
+        const combinedDeltas = combined.combinedDeltas
         if(combinedDeltas.length) {
             let f = 0
             for(const d of combinedDeltas) {
@@ -61,14 +68,35 @@ class Histogram {
                 cumulativeDeltas.push({y: d.y, f})
             }
         }
-        return cumulativeDeltas
+
+        if(!this.#combineSubDelta) {
+            return cumulativeDeltas
+        }
+
+        /**
+         * @type {{y: number, f: number}[]}
+         */
+        const recombinedCumulativeDeltas = [cumulativeDeltas[0]]
+        let lastRecombinedDelta = cumulativeDeltas[0]
+        for(const delta of cumulativeDeltas.slice(1)) {
+            const diff = delta.y - lastRecombinedDelta.y
+            if(diff == 0 || diff > combined.zeroDeltaSpan) {
+                recombinedCumulativeDeltas.push(delta)
+                lastRecombinedDelta = delta
+            } else {
+                // Note: only supports _one_
+                lastRecombinedDelta.f = (lastRecombinedDelta.f + delta.f) / 2
+            }
+        }
+
+        return recombinedCumulativeDeltas
     }
 
     get deltas() {
-        if(!this.#deltas) {
-            this.#deltas = this.getDeltas()
+        if(!this.#deltaInfo) {
+            this.#deltaInfo = this.getDeltas()
         }
-        return this.#deltas.slice()
+        return this.#deltaInfo.deltas.slice()
     }
 
     /**
@@ -79,7 +107,7 @@ class Histogram {
     }
     set fieldInfo(v) {
         this.#fieldInfo = v
-        this.#deltas = undefined
+        this.#deltaInfo = undefined
     }
 
     /**
@@ -116,6 +144,10 @@ class Histogram {
         const zeroDeltaSpan = expectedMinDeltaY / 2
 
         // Presume sorted in x
+
+        /**
+         * @type {{y: number, dF: number}[]}
+         */
         const deltas = []
         let lastY = dataPoints[0].y ?? 0
         let lastX = dataPoints[0].x
@@ -164,14 +196,17 @@ class Histogram {
         }
         deltas.sort((a, b) => a.y - b.y)
 
-        return deltas
+        return {deltas, zeroDeltaSpan}
     }
 
     /**
      *
      * @param {EpwParser} parser
+     * @param {boolean} combineSubDelta If true, spans less than delta
+     * (typically, zero) will be combined with their non-delta counterparts
      */
-    constructor(parser) {
+    constructor(parser, combineSubDelta = false) {
         this.#parser = parser
+        this.#combineSubDelta = combineSubDelta
     }
 }

@@ -27,7 +27,7 @@ class EpwImporter {
             const result = this.#fr.result
             if(typeof result != "string") throw new Error("Wrong result type?")
             const p = new EpwParser(result)
-            const h = new Histogram(p, 0.05)
+            const h = new Histogram(p, true)
             this.#hr.histogram = h
 
             this.#hr.render()
