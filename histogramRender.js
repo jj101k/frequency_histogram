@@ -1,4 +1,4 @@
-//@-check
+//@ts-check
 
 /**
  *
@@ -16,17 +16,17 @@ class HistogramRender {
      * @type {SVGSVGElement | undefined}
      */
     #svg
+
+    /**
+     * @type {EpwNamedField}
+     */
+    #field
+
     /**
      *
-     * @param {HTMLElement} container
+     * @returns {[SVGPathElement, SVGSVGElement]}
      */
-    constructor(container) {
-        this.#container = container
-    }
-    /**
-     *
-     */
-    init() {
+    #init() {
         const document = this.#container.ownerDocument
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
         svg.setAttribute("viewBox", "0 0 1000 1000")
@@ -37,28 +37,69 @@ class HistogramRender {
         path.setAttribute("stroke-width", "0.05")
         path.setAttribute("fill", "none")
         svg.append(path)
-        this.#path = path
         this.#container.append(svg)
-        this.#svg = svg
+        return [path, svg]
+    }
+
+    /**
+     * @type {Histogram | undefined}
+     */
+    histogram
+
+    /**
+     *
+     */
+    get field() {
+        return this.#field
+    }
+    set field(v) {
+        this.#field = v
+        this.render()
+    }
+
+    /**
+     *
+     * @param {HTMLElement} container
+     */
+    constructor(container) {
+        this.#container = container
     }
     /**
      *
-     * @param {Histogram} h
      */
-    render(h) {
-        if(!this.#svg) {
-            this.init()
+    render() {
+        if(!this.histogram) {
+            return
         }
-        const cumulativeDeltas = h.cumulativeDeltas
+        if(!this.#svg || !this.#path) {
+            [this.#path, this.#svg] = this.#init()
+        }
+        this.histogram.field = this.#field
+        const cumulativeDeltas = this.histogram.cumulativeDeltas
         let lastPos = {y: cumulativeDeltas[0].y - 0.1, fV: 0}
         let dA = `M ${lastPos.y} ${lastPos.fV}`
         let minX = cumulativeDeltas[0].y
         let maxX = cumulativeDeltas[cumulativeDeltas.length - 1].y
         let minY = 0
         let maxY = -Infinity
+
+        let trueMinY = 0
+        let trueMaxY = 0
+        for(const d of cumulativeDeltas) {
+            const v = d.f
+            if(v > trueMaxY) {
+                trueMaxY = v
+            }
+            if(v < trueMinY) {
+                trueMinY = v
+            }
+        }
+
+        const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
+
         for(const d of cumulativeDeltas) {
             console.log(`${d.y} = ${Math.round(d.f)}`)
-            const v = -d.f / 50 // -Math.log(d.f)
+            const v = -d.f * rescale // -Math.log(d.f)
             const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
             lastPos = {y: d.y, fV: v}
             // console.log(lA)
@@ -76,5 +117,6 @@ class HistogramRender {
         this.#svg.setAttribute("viewBox", box)
 
         this.#path.setAttribute("d", dA)
+        this.#path.setAttribute("stroke-width", "" + ((maxX - maxY) / 800))
     }
 }

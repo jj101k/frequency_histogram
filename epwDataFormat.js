@@ -213,14 +213,8 @@ class EpwNamedField {
  *
  */
 class EpwNamedNumberField extends EpwNamedField {
-    getParser() {
-        return this.offset !== undefined ?
-            new EpwPlainNumberField(this.offset) :
-            undefined
-    }
-
     /**
-     * @type {number | undefined}
+     * @type {string | undefined}
      */
     get units() {
         return undefined
@@ -230,7 +224,18 @@ class EpwNamedNumberField extends EpwNamedField {
 /**
  *
  */
-class EpwNamedConstrainedNumberField extends EpwNamedField {
+class EpwNamedSimpleNumberField extends EpwNamedNumberField {
+    getParser() {
+        return this.offset !== undefined ?
+            new EpwPlainNumberField(this.offset) :
+            undefined
+    }
+}
+
+/**
+ *
+ */
+class EpwNamedConstrainedNumberField extends EpwNamedNumberField {
     /**
      *
      */
@@ -285,7 +290,7 @@ const EpwFields = (() => {
      * @returns
      */
     function PlainNumber(name) {
-        return new EpwNamedNumberField(name)
+        return new EpwNamedSimpleNumberField(name)
     }
 
     /**

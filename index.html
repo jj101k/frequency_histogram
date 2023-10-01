@@ -4,13 +4,28 @@
 
     </head>
     <body>
-        <p>Import EPW data <input type="file" id="import"/></p>
+        <section>
+            <h2>Import</h2>
+            <p>Import EPW data file <input type="file" id="import"/></p>
+        </section>
         <script src="histogram.js"></script>
         <script src="histogramRender.js"></script>
+        <script src="histogramOptionsReader.js"></script>
+        <script src="epwImporter.js"></script>
         <script src="epwDataFormat.js"></script>
         <script src="epwParser.js"></script>
-        <p id="graph-container">
-        </p>
+        <section>
+            <h2>Options</h2>
+            <p>
+                <select id="field">
+
+                </select>
+            </p>
+        </section>
+        <section>
+            <h2 id="graph-title"></h2>
+            <p id="graph-container"></p>
+        </section>
         <script src="main.js"></script>
     </body>
 </html>

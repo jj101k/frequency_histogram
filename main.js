@@ -11,19 +11,18 @@ function main() {
     const hr = new HistogramRender(graphContainer)
     /** @type {HTMLInputElement | null} */
     const e = document.querySelector("#import")
-    e?.addEventListener("change", function(event) {
-        if(event.target instanceof HTMLInputElement && event.target.files) {
-            const fr = new FileReader()
-            fr.onload = () => {
-                if(typeof fr.result != "string") throw new Error("Wrong result type?")
-                const r = new EpwParser(fr.result).getValues(EpwFields[7])
-                console.log(r)
-                const h = new Histogram(r, 0.05)
+    if(!e) {
+        throw new Error("Cannot find import container")
+    }
+    new EpwImporter(e, hr).init()
 
-                hr.render(h)
-            }
-            fr.readAsText(event.target.files[0])
-        }
-    })
+    /** @type {HTMLSelectElement | null} */
+    const ex = document.querySelector("#field")
+    if(!ex) {
+        throw new Error("Cannot find selector")
+    }
+    const optReader = new HistogramOptionsReader(ex, hr)
+    optReader.init()
+    optReader.value = EpwFields.find(f => f.name == "Dry Bulb Temperature")
 }
 main()
