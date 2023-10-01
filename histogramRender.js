@@ -115,6 +115,8 @@ class HistogramRender {
         this.#svg.setAttribute("viewBox", box)
 
         this.#path.setAttribute("d", dA)
-        this.#path.setAttribute("stroke-width", "" + ((maxX - maxY) / 800))
+        const strokeWidth = `${(maxX - minX) / 800}`
+        console.log(strokeWidth)
+        this.#path.setAttribute("stroke-width", strokeWidth)
     }
 }
