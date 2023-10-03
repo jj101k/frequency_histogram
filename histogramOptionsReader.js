@@ -1,3 +1,5 @@
+//@ts-check
+
 /**
  *
  */
@@ -23,7 +25,7 @@ class HistogramOptionsReader {
         if(index == -1) {
             throw new Error("Value not allowed")
         }
-        this.#field.value = index
+        this.#field.value = "" + index
         this.#hr.field = this.value
     }
     /**
