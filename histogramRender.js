@@ -42,6 +42,11 @@ class HistogramRender {
     }
 
     /**
+     *
+     */
+    debug = false
+
+    /**
      * @type {Histogram | undefined}
      */
     histogram
@@ -117,7 +122,9 @@ class HistogramRender {
             for(const d of cumulativeDeltas) {
                 const v = -d.f * rescale // -Math.log(d.f)
                 const lA = `L ${d.y},${v}`
-                console.log(lA)
+                if(this.debug) {
+                    console.log(lA)
+                }
                 dA += " " + lA
                 if(v > maxY) {
                     maxY = v
@@ -129,12 +136,16 @@ class HistogramRender {
         }
 
         const box = `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
-        console.log(box)
+        if(this.debug) {
+            console.log(box)
+        }
         this.#svg.setAttribute("viewBox", box)
 
         this.#path.setAttribute("d", dA)
         const strokeWidth = `${(maxX - minX) / 800}`
-        console.log(strokeWidth)
+        if(this.debug) {
+            console.log(strokeWidth)
+        }
         this.#path.setAttribute("stroke-width", strokeWidth)
     }
 }

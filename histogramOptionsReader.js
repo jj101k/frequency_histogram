@@ -17,6 +17,11 @@ class HistogramOptionsReader {
     /**
      *
      */
+    #loggingToggle
+
+    /**
+     *
+     */
     get value() {
         return EpwFields[this.#field.value]
     }
@@ -32,10 +37,12 @@ class HistogramOptionsReader {
      *
      * @param {HTMLSelectElement} field
      * @param {HistogramRender} hr
+     * @param {HTMLInputElement | null} loggingToggle
      */
-    constructor(field, hr) {
+    constructor(field, hr, loggingToggle) {
         this.#field = field
         this.#hr = hr
+        this.#loggingToggle = loggingToggle
     }
     /**
      *
@@ -54,5 +61,9 @@ class HistogramOptionsReader {
             this.#hr.field = this.value
         })
         this.#hr.field = this.value
+        this.#loggingToggle?.addEventListener("change", () => {
+            this.#hr.debug = this.#loggingToggle?.checked ?? false
+        })
+        this.#hr.debug = this.#loggingToggle?.checked ?? false
     }
 }

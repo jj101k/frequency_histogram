@@ -21,7 +21,7 @@ function main() {
     if(!ex) {
         throw new Error("Cannot find selector")
     }
-    const optReader = new HistogramOptionsReader(ex, hr)
+    const optReader = new HistogramOptionsReader(ex, hr, document.querySelector("#logging"))
     optReader.init()
     optReader.value = EpwFields.find(f => f.name == "Dry Bulb Temperature")
 }
