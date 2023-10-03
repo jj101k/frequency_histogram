@@ -104,11 +104,17 @@ class HistogramRender {
 
         const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
 
+        if(this.debug) {
+            console.log(cumulativeDeltas)
+        }
         if(renderSquare) {
             let lastPos = firstPos
             for(const d of cumulativeDeltas) {
                 const v = -d.f * rescale // -Math.log(d.f)
                 const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
+                if(this.debug) {
+                    console.log(lA)
+                }
                 lastPos = {y: d.y, fV: v}
                 dA += " " + lA
                 if(v > maxY) {

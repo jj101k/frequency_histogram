@@ -73,6 +73,8 @@ class Histogram {
             return cumulativeDeltas
         }
 
+        // console.log("ZDS:" + this.combined.zeroDeltaSpan)
+
         /**
          * @type {{y: number, f: number}[]}
          */
