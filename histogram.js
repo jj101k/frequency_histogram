@@ -20,6 +20,11 @@ class Histogram {
     #fieldInfo
 
     /**
+     * @type {{y: number, f: number}[] | undefined}
+     */
+    #frequencies
+
+    /**
      *
      */
     #parser
@@ -101,6 +106,13 @@ class Histogram {
         return this.#deltaInfo.deltas.slice()
     }
 
+    get frequencies() {
+        if(!this.#frequencies) {
+            this.#frequencies = this.getFrequencies()
+        }
+        return this.#frequencies.slice()
+    }
+
     /**
      *
      */
@@ -110,6 +122,7 @@ class Histogram {
     set fieldInfo(v) {
         this.#fieldInfo = v
         this.#deltaInfo = undefined
+        this.#frequencies = undefined
     }
 
     /**
@@ -195,6 +208,30 @@ class Histogram {
         deltas.sort((a, b) => a.y - b.y)
 
         return {deltas, zeroDeltaSpan}
+    }
+
+
+    /**
+     *
+     * @returns
+     */
+    getFrequencies() {
+        const dataPoints = this.#parser.getValues(this.#fieldInfo.field)
+
+        /**
+         * @type {Record<number, number>}
+         */
+        const frequencies = {}
+        for(const dataPoint of dataPoints) {
+            if(dataPoint.y === undefined || dataPoint.y === null) {
+                continue
+            }
+            if(!frequencies[dataPoint.y]) {
+                frequencies[dataPoint.y] = 0
+            }
+            frequencies[dataPoint.y]++
+        }
+        return Object.entries(frequencies).map(([y, f]) => ({y: +y, f})).sort((a, b) => a.y - b.y)
     }
 
     /**

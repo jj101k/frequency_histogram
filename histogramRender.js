@@ -54,6 +54,11 @@ class HistogramRender {
     /**
      *
      */
+    plain = false
+
+    /**
+     *
+     */
     get field() {
         return this.#field
     }
@@ -69,10 +74,23 @@ class HistogramRender {
     constructor(container) {
         this.#container = container
     }
+
+    /**
+     *
+     * @returns
+     */
+    render() {
+        if(this.plain) {
+            return this.renderPlain()
+        } else {
+            return this.renderDelta()
+        }
+    }
+
     /**
      *
      */
-    render() {
+    renderDelta() {
         if(!this.histogram) {
             return
         }
@@ -126,6 +144,92 @@ class HistogramRender {
             }
         } else {
             for(const d of cumulativeDeltas) {
+                const v = -d.f * rescale // -Math.log(d.f)
+                const lA = `L ${d.y},${v}`
+                if(this.debug) {
+                    console.log(lA)
+                }
+                dA += " " + lA
+                if(v > maxY) {
+                    maxY = v
+                }
+                if(v < minY) {
+                    minY = v
+                }
+            }
+        }
+
+        const box = `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
+        if(this.debug) {
+            console.log(box)
+        }
+        this.#svg.setAttribute("viewBox", box)
+
+        this.#path.setAttribute("d", dA)
+        const strokeWidth = `${(maxX - minX) / 800}`
+        if(this.debug) {
+            console.log(strokeWidth)
+        }
+        this.#path.setAttribute("stroke-width", strokeWidth)
+    }
+
+    /**
+     *
+     */
+    renderPlain() {
+        if(!this.histogram) {
+            return
+        }
+        if(!this.#svg || !this.#path) {
+            [this.#path, this.#svg] = this.#init()
+        }
+        this.histogram.fieldInfo = {field: this.#field}
+        const frequencies = this.histogram.frequencies
+        const firstPos = {y: frequencies[0].y - 0.1, fV: 0}
+        let dA = `M ${firstPos.y} ${firstPos.fV}`
+        let minX = frequencies[0].y
+        let maxX = frequencies[frequencies.length - 1].y
+        let minY = 0
+        let maxY = -Infinity
+
+        let trueMinY = 0
+        let trueMaxY = 0
+        for(const d of frequencies) {
+            const v = d.f
+            if(v > trueMaxY) {
+                trueMaxY = v
+            }
+            if(v < trueMinY) {
+                trueMinY = v
+            }
+        }
+
+        const renderSquare = frequencies.length < 20
+
+        const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
+
+        if(this.debug) {
+            console.log(frequencies)
+        }
+        if(renderSquare) {
+            let lastPos = firstPos
+            for(const d of frequencies) {
+                const v = -d.f * rescale // -Math.log(d.f)
+                const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
+                if(this.debug) {
+                    console.log(lA)
+                }
+                lastPos = {y: d.y, fV: v}
+                dA += " " + lA
+                if(v > maxY) {
+                    maxY = v
+                }
+                if(v < minY) {
+                    minY = v
+                }
+            }
+        } else {
+            for(const d of frequencies) {
                 const v = -d.f * rescale // -Math.log(d.f)
                 const lA = `L ${d.y},${v}`
                 if(this.debug) {
