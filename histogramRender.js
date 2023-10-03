@@ -12,6 +12,12 @@ class HistogramRender {
      * @type {SVGPathElement | undefined}
      */
     #path
+
+    /**
+     *
+     */
+    #plain = false
+
     /**
      * @type {SVGSVGElement | undefined}
      */
@@ -54,16 +60,22 @@ class HistogramRender {
     /**
      *
      */
-    plain = false
-
-    /**
-     *
-     */
     get field() {
         return this.#field
     }
     set field(v) {
         this.#field = v
+        this.render()
+    }
+
+    /**
+     *
+     */
+    get plain() {
+        return this.#plain
+    }
+    set plain(v) {
+        this.#plain = v
         this.render()
     }
 
