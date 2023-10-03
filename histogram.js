@@ -165,14 +165,10 @@ class Histogram {
              * @type {number}
              */
             let hY
-            /**
-             * @type {number}
-             */
-            let dY
             if(Math.abs(dataPoint.y - lastY) < zeroDeltaSpan) {
-                lY = Math.min(dataPoint.y, lastY)
-                hY = lY + zeroDeltaSpan
-                dY = zeroDeltaSpan
+                const mid = Math.round((dataPoint.y + lastY) / 2 / zeroDeltaSpan) * zeroDeltaSpan
+                lY = mid - zeroDeltaSpan
+                hY = mid + zeroDeltaSpan
             } else {
                 if(dataPoint.y < lastY) {
                     lY = dataPoint.y
@@ -181,8 +177,8 @@ class Histogram {
                     lY = lastY
                     hY = dataPoint.y
                 }
-                dY = hY - lY
             }
+            const dY = hY - lY
             const dX = dataPoint.x - lastX
             // Push ADD and REMOVE.
             // We consider it to go UP at lY, go down at hY; and we consider
