@@ -68,13 +68,22 @@ class EpwParser {
         const r = this.rows.map(
             (r, i) => ({x: i, y: r.get(field)})
         ) // .slice(0, 96)
-        // console.log(r)
+
         const sampleSize = 24
-        const s = new Set()
-        for(const ri of r.slice(0, sampleSize)) {
-            s.add(ri.y)
+        const loggableRunLength = 4
+        const maxLoggableRuns = 50
+        let runs = 0
+        let last = r[0].y
+        for(const ri of r.slice(1, sampleSize)) {
+            if(ri.y != last) {
+                runs++
+                last = ri.y
+            }
         }
-        if(s.size < sampleSize / 4) {
+
+        if(runs * loggableRunLength < sampleSize) {
+            console.log("Dumping run lengths")
+            let runs = 0
             /**
              * @type {number | null | undefined}
              */
@@ -83,6 +92,11 @@ class EpwParser {
             for(const ri of r) {
                 if(ri.y !== l) {
                     console.log(`${l}: ${c}`)
+                    runs++
+                    if(runs > maxLoggableRuns) {
+                        console.error("Too many runs!")
+                        break
+                    }
                     l = ri.y
                     c = 1
                 } else {
