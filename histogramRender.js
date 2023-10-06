@@ -99,83 +99,46 @@ class HistogramRender {
         }
     }
 
+    #prepareHistogram() {
+        if(!this.histogram) {
+            return undefined
+        }
+        this.histogram.fieldInfo = {field: this.#field}
+        return this.histogram
+    }
+
+    /**
+     *
+     * @param {{y: number}[]} values
+     * @returns
+     */
+    #firstPos(values) {
+        return {y: values[0].y - 0.1, fV: 0}
+    }
+
     /**
      *
      */
     renderDelta() {
-        if(!this.histogram) {
+        const histogram = this.#prepareHistogram()
+        if(!histogram) {
             return
         }
         if(!this.#svg || !this.#path) {
             [this.#path, this.#svg] = this.#init()
         }
-        this.histogram.fieldInfo = {field: this.#field}
-        const cumulativeDeltas = this.histogram.cumulativeDeltas
-        const firstPos = {y: cumulativeDeltas[0].y - 0.1, fV: 0}
-        let dA = `M ${firstPos.y} ${firstPos.fV}`
-        let minX = cumulativeDeltas[0].y
-        let maxX = cumulativeDeltas[cumulativeDeltas.length - 1].y
-        let minY = 0
-        let maxY = -Infinity
+        const cumulativeDeltas = histogram.cumulativeDeltas
 
-        const displayFrequency = this.#field.expectsExponentialFrequency ?
-            (f) => -Math.log(f) : (f) => -f
-
-        let trueMinY = 0
-        let trueMaxY = 0
-        for(const d of cumulativeDeltas) {
-            const v = displayFrequency(d.f)
-            if(v > trueMaxY) {
-                trueMaxY = v
-            }
-            if(v < trueMinY) {
-                trueMinY = v
-            }
-        }
-
-        const renderSquare = cumulativeDeltas.length < 20
-
-        const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
-
-        if(this.debug) {
+        if (this.debug) {
             console.log(cumulativeDeltas)
         }
 
-        if(renderSquare) {
-            let lastPos = firstPos
-            for(const d of cumulativeDeltas) {
-                const v = displayFrequency(d.f) * rescale
-                const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
-                if(this.debug) {
-                    console.log(lA)
-                }
-                lastPos = {y: d.y, fV: v}
-                dA += " " + lA
-                if(v > maxY) {
-                    maxY = v
-                }
-                if(v < minY) {
-                    minY = v
-                }
-            }
-        } else {
-            for(const d of cumulativeDeltas) {
-                const v = displayFrequency(d.f) * rescale
-                const lA = `L ${d.y},${v}`
-                if(this.debug) {
-                    console.log(lA)
-                }
-                dA += " " + lA
-                if(v > maxY) {
-                    maxY = v
-                }
-                if(v < minY) {
-                    minY = v
-                }
-            }
-        }
+        const firstPos = this.#firstPos(cumulativeDeltas)
 
-        const box = `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
+        const scaler = new Scaler(this.#field, firstPos)
+
+        const {dA, box, maxX, minX} = scaler.test3(cumulativeDeltas, firstPos)
+
         if(this.debug) {
             console.log(box)
         }
@@ -193,75 +156,25 @@ class HistogramRender {
      *
      */
     renderPlain() {
-        if(!this.histogram) {
+        const histogram = this.#prepareHistogram()
+        if(!histogram) {
             return
         }
         if(!this.#svg || !this.#path) {
             [this.#path, this.#svg] = this.#init()
         }
-        this.histogram.fieldInfo = {field: this.#field}
-        const frequencies = this.histogram.frequencies
-        const firstPos = {y: frequencies[0].y - 0.1, fV: 0}
-        let dA = `M ${firstPos.y} ${firstPos.fV}`
-        let minX = frequencies[0].y
-        let maxX = frequencies[frequencies.length - 1].y
-        let minY = 0
-        let maxY = -Infinity
-
-        let trueMinY = 0
-        let trueMaxY = 0
-        for(const d of frequencies) {
-            const v = d.f
-            if(v > trueMaxY) {
-                trueMaxY = v
-            }
-            if(v < trueMinY) {
-                trueMinY = v
-            }
-        }
-
-        const renderSquare = frequencies.length < 20
-
-        const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
+        const frequencies = histogram.frequencies
 
         if(this.debug) {
             console.log(frequencies)
         }
-        if(renderSquare) {
-            let lastPos = firstPos
-            for(const d of frequencies) {
-                const v = -d.f * rescale // -Math.log(d.f)
-                const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
-                if(this.debug) {
-                    console.log(lA)
-                }
-                lastPos = {y: d.y, fV: v}
-                dA += " " + lA
-                if(v > maxY) {
-                    maxY = v
-                }
-                if(v < minY) {
-                    minY = v
-                }
-            }
-        } else {
-            for(const d of frequencies) {
-                const v = -d.f * rescale // -Math.log(d.f)
-                const lA = `L ${d.y},${v}`
-                if(this.debug) {
-                    console.log(lA)
-                }
-                dA += " " + lA
-                if(v > maxY) {
-                    maxY = v
-                }
-                if(v < minY) {
-                    minY = v
-                }
-            }
-        }
 
-        const box = `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
+        const firstPos = this.#firstPos(frequencies)
+
+        const scaler = new Scaler(this.#field, firstPos)
+
+        const {dA, box, maxX, minX} = scaler.test3(frequencies, firstPos)
+
         if(this.debug) {
             console.log(box)
         }

@@ -222,6 +222,13 @@ class EpwNamedField {
  */
 class EpwNamedNumberField extends EpwNamedField {
     /**
+     * If the value is practically exponential, this should be true.
+     */
+    get exponentialValues() {
+        return false
+    }
+
+    /**
      * @type {string | undefined}
      */
     get units() {
@@ -256,6 +263,10 @@ class EpwNamedConstrainedNumberField extends EpwNamedNumberField {
      *
      */
     #options
+
+    get exponentialValues() {
+        return ["Cd/m2", "lux", "Wh/m2"].includes(this.units ?? "")
+    }
 
     get expectsExponentialFrequency() {
         return ["Cd/m2", "lux", "Wh/m2"].includes(this.units ?? "")
