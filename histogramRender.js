@@ -118,10 +118,13 @@ class HistogramRender {
         let minY = 0
         let maxY = -Infinity
 
+        const displayFrequency = this.#field.expectsExponentialFrequency ?
+            (f) => -Math.log(f) : (f) => -f
+
         let trueMinY = 0
         let trueMaxY = 0
         for(const d of cumulativeDeltas) {
-            const v = d.f
+            const v = displayFrequency(d.f)
             if(v > trueMaxY) {
                 trueMaxY = v
             }
@@ -137,10 +140,11 @@ class HistogramRender {
         if(this.debug) {
             console.log(cumulativeDeltas)
         }
+
         if(renderSquare) {
             let lastPos = firstPos
             for(const d of cumulativeDeltas) {
-                const v = -d.f * rescale // -Math.log(d.f)
+                const v = displayFrequency(d.f) * rescale
                 const lA = `L ${d.y},${lastPos.fV} L ${d.y},${v}`
                 if(this.debug) {
                     console.log(lA)
@@ -156,7 +160,7 @@ class HistogramRender {
             }
         } else {
             for(const d of cumulativeDeltas) {
-                const v = -d.f * rescale // -Math.log(d.f)
+                const v = displayFrequency(d.f) * rescale
                 const lA = `L ${d.y},${v}`
                 if(this.debug) {
                     console.log(lA)

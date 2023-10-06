@@ -164,6 +164,13 @@ class EpwNamedField {
     #parser
 
     /**
+     * If the frequency should be exponential, this should be true.
+     */
+    get expectsExponentialFrequency() {
+        return false
+    }
+
+    /**
      * @abstract
      * @protected
      * @returns {EpwField<T> | undefined}
@@ -249,6 +256,10 @@ class EpwNamedConstrainedNumberField extends EpwNamedNumberField {
      *
      */
     #options
+
+    get expectsExponentialFrequency() {
+        return ["Cd/m2", "lux", "Wh/m2"].includes(this.units ?? "")
+    }
 
     /**
      *
