@@ -130,7 +130,7 @@ class Scaler {
      * @param {{y: number, f: number}[]} values
      * @param {{y: number, fV: number}} firstPos
      */
-    test3(values, firstPos) {
+    renderValues(values, firstPos) {
         const minX = this.displayValue(values[0].y)
         const maxX = this.displayValue(values[values.length - 1].y)
 
