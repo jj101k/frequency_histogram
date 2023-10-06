@@ -137,7 +137,7 @@ class HistogramRender {
 
         const scaler = new Scaler(this.#field, firstPos)
 
-        const {dA, box, maxX, minX} = scaler.renderValues(cumulativeDeltas, firstPos)
+        const {dA, box, maxX, minX} = scaler.renderValues(cumulativeDeltas)
 
         if(this.debug) {
             console.log(box)
@@ -173,7 +173,7 @@ class HistogramRender {
 
         const scaler = new Scaler(this.#field, firstPos)
 
-        const {dA, box, maxX, minX} = scaler.renderValues(frequencies, firstPos)
+        const {dA, box, maxX, minX} = scaler.renderValues(frequencies)
 
         if(this.debug) {
             console.log(box)

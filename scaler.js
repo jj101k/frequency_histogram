@@ -77,6 +77,7 @@ class Scaler {
      *
      */
     #field
+    #firstPos
     /**
      *
      */
@@ -94,6 +95,7 @@ class Scaler {
      */
     constructor(field, firstPos) {
         this.#field = field
+        this.#firstPos = firstPos
         this.#logOffset = firstPos.y > 0 ? 0 : (1 - firstPos.y)
 
         this.#pathRenderer = new SvgPathRenderer({x: this.displayValue(firstPos.y), y: firstPos.fV})
@@ -128,9 +130,8 @@ class Scaler {
     /**
      *
      * @param {{y: number, f: number}[]} values
-     * @param {{y: number, fV: number}} firstPos
      */
-    renderValues(values, firstPos) {
+    renderValues(values) {
         const minX = this.displayValue(values[0].y)
         const maxX = this.displayValue(values[values.length - 1].y)
 
@@ -151,7 +152,7 @@ class Scaler {
         const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
 
         if (renderSquare) {
-            let lastPos = firstPos
+            let lastPos = this.#firstPos
             for (const d of values) {
                 const v = this.displayFrequency(d.f) * rescale
                 this.#pathRenderer.line({x: this.displayValue(d.y), y: lastPos.fV})
