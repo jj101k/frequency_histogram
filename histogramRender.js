@@ -109,15 +109,6 @@ class HistogramRender {
 
     /**
      *
-     * @param {{y: number}[]} values
-     * @returns
-     */
-    #firstPos(values) {
-        return {y: values[0].y - 0.1, fV: 0}
-    }
-
-    /**
-     *
      */
     renderDelta() {
         const histogram = this.#prepareHistogram()
@@ -133,11 +124,9 @@ class HistogramRender {
             console.log(cumulativeDeltas)
         }
 
-        const firstPos = this.#firstPos(cumulativeDeltas)
+        const scaler = new Scaler(this.#field)
 
-        const scaler = new Scaler(this.#field, firstPos)
-
-        const {dA, box, maxX, minX} = scaler.renderValues(cumulativeDeltas)
+        const {dA, box, strokeWidth} = scaler.renderValues(cumulativeDeltas)
 
         if(this.debug) {
             console.log(box)
@@ -145,7 +134,6 @@ class HistogramRender {
         this.#svg.setAttribute("viewBox", box)
 
         this.#path.setAttribute("d", dA)
-        const strokeWidth = `${(maxX - minX) / 800}`
         if(this.debug) {
             console.log(strokeWidth)
         }
@@ -169,11 +157,9 @@ class HistogramRender {
             console.log(frequencies)
         }
 
-        const firstPos = this.#firstPos(frequencies)
+        const scaler = new Scaler(this.#field)
 
-        const scaler = new Scaler(this.#field, firstPos)
-
-        const {dA, box, maxX, minX} = scaler.renderValues(frequencies)
+        const {dA, box, strokeWidth} = scaler.renderValues(frequencies)
 
         if(this.debug) {
             console.log(box)
@@ -181,7 +167,6 @@ class HistogramRender {
         this.#svg.setAttribute("viewBox", box)
 
         this.#path.setAttribute("d", dA)
-        const strokeWidth = `${(maxX - minX) / 800}`
         if(this.debug) {
             console.log(strokeWidth)
         }

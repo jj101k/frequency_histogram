@@ -77,28 +77,13 @@ class Scaler {
      *
      */
     #field
-    #firstPos
-    /**
-     *
-     */
-    #logOffset
-
-    /**
-     *
-     */
-    #pathRenderer
 
     /**
      *
      * @param {EpwNamedNumberField} field
-     * @param {{y: number, fV: number}} firstPos
      */
-    constructor(field, firstPos) {
+    constructor(field) {
         this.#field = field
-        this.#firstPos = firstPos
-        this.#logOffset = firstPos.y > 0 ? 0 : (1 - firstPos.y)
-
-        this.#pathRenderer = new SvgPathRenderer({x: this.displayValue(firstPos.y), y: firstPos.fV})
     }
 
     /**
@@ -117,11 +102,12 @@ class Scaler {
     /**
      *
      * @param {number} v
+     * @param {number} logOffset
      * @returns
      */
-    displayValue(v) {
+    displayValue(v, logOffset) {
         if(this.#field.exponentialValues) {
-            return Math.log(v + this.#logOffset)
+            return Math.log(v + logOffset)
         } else {
             return v
         }
@@ -132,11 +118,15 @@ class Scaler {
      * @param {{y: number, f: number}[]} values
      */
     renderValues(values) {
-        const minX = this.displayValue(values[0].y)
-        const maxX = this.displayValue(values[values.length - 1].y)
+        const firstPos = {y: values[0].y - 0.1, fV: 0}
+        const logOffset = firstPos.y > 0 ? 0 : (1 - firstPos.y)
+        const minX = this.displayValue(values[0].y, logOffset)
+        const maxX = this.displayValue(values[values.length - 1].y, logOffset)
 
-        let trueMinY = 0
-        let trueMaxY = 0
+        const pathRenderer = new SvgPathRenderer({x: this.displayValue(firstPos.y, logOffset), y: firstPos.fV})
+
+        let trueMinY = values[0].f
+        let trueMaxY = values[0].f
         for (const d of values) {
             const v = this.displayFrequency(d.f)
             if (v > trueMaxY) {
@@ -152,23 +142,24 @@ class Scaler {
         const rescale = (maxX - minX) / ((trueMaxY - trueMinY) * 4)
 
         if (renderSquare) {
-            let lastPos = this.#firstPos
+            let lastPos = firstPos
             for (const d of values) {
                 const v = this.displayFrequency(d.f) * rescale
-                this.#pathRenderer.line({x: this.displayValue(d.y), y: lastPos.fV})
-                this.#pathRenderer.line({x: this.displayValue(d.y), y: v})
-                lastPos = { y: this.displayValue(d.y), fV: v }
+                pathRenderer.line({x: this.displayValue(d.y, logOffset), y: lastPos.fV})
+                pathRenderer.line({x: this.displayValue(d.y, logOffset), y: v})
+                lastPos = { y: this.displayValue(d.y, logOffset), fV: v }
             }
         } else {
             for (const d of values) {
                 const v = this.displayFrequency(d.f) * rescale
-                this.#pathRenderer.line({x: this.displayValue(d.y), y: v})
+                pathRenderer.line({x: this.displayValue(d.y, logOffset), y: v})
             }
         }
 
-        const box = this.#pathRenderer.box
+        const box = pathRenderer.box
 
-        return {dA: this.#pathRenderer.dA,
-            box: [box.x, box.y, box.w, box.h].join(" "), maxX, minX}
+        return {dA: pathRenderer.dA,
+            box: [box.x, box.y, box.w, box.h].join(" "),
+            strokeWidth: `${(maxX - minX) / 800}`}
     }
 }
