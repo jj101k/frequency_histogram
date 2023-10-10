@@ -1,40 +1,52 @@
 <!DOCTYPE html>
 <html>
     <head>
-
-    </head>
-    <body>
-        <section>
-            <h2>Import</h2>
-            <p>Import EPW data file <input type="file" id="import"/></p>
-        </section>
+        <script src="../pathfind/Frameworker.js"></script>
         <script src="histogram.js"></script>
         <script src="scaler.js"></script>
         <script src="histogramRender.js"></script>
-        <script src="histogramOptionsReader.js"></script>
         <script src="epwImporter.js"></script>
         <script src="epwDataFormat.js"></script>
         <script src="epwParser.js"></script>
-        <section>
-            <h2>Options</h2>
-            <p>
-                Field
-                <select id="field">
+    </head>
+    <body>
+        <section id="main">
+            <section>
+                <h2>Import</h2>
+                <p>Import EPW data file <input type="file" id="import"/></p>
+            </section>
+            <section>
+                <h2>Options</h2>
+                <p>
+                    Field
+                    <select data-readwrite="field" data-options="fieldOptions">
 
-                </select>
-            </p>
-            <p>
-                Logging
-                <input type="checkbox" id="logging"/>
-            </p>
-            <p>
-                Plain histogram
-                <input type="checkbox" id="plain"/>
-            </p>
-        </section>
-        <section>
-            <h2 id="graph-title"></h2>
-            <p id="graph-container"></p>
+                    </select>
+
+                    Units:
+                    <span data-read="units" data-read-trigger="field">?</span>
+                </p>
+                <p>
+                    Logging
+                    <input type="checkbox" data-readwrite="debug"/>
+                </p>
+                <p>
+                    Plain histogram
+                    <input type="checkbox" data-readwrite="plain"/>
+                </p>
+                <p>
+                    Value (x) scaling
+                    <select data-readwrite="preferLog">
+                        <option value="0">Autodetect</option>
+                        <option value="1">Log(n)</option>
+                        <option value="-1">n</option>
+                    </select>
+                </p>
+            </section>
+            <section>
+                <h2 id="graph-title"></h2>
+                <p id="graph-container"></p>
+            </section>
         </section>
         <script src="main.js"></script>
     </body>

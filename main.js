@@ -16,14 +16,24 @@ function main() {
     }
     new EpwImporter(e, hr).init()
 
-    /** @type {HTMLSelectElement | null} */
-    const ex = document.querySelector("#field")
-    if(!ex) {
-        throw new Error("Cannot find selector")
+    const retainedData = {
+        /**
+         * @type {EpwNamedNumberField[]}
+         */
+        get fieldOptions() {
+            return EpwFields.filter(field => field instanceof EpwNamedNumberField)
+        },
+        get units() {
+            return this.field.units
+        },
     }
-    const optReader = new HistogramOptionsReader(ex, hr,
-        document.querySelector("#logging"), document.querySelector("#plain"))
-    optReader.init()
-    optReader.value = EpwFields.find(f => f.name == "Dry Bulb Temperature")
+    Frameworker.proxy(retainedData, hr, ["plain", "debug", "field", "preferLog"],
+        {}, [])
+
+    const f = new Frameworker(retainedData)
+    f.addEventListener("beforeinit", () => {
+        retainedData.field = EpwFields.find(f => f.name == "Dry Bulb Temperature")
+    })
+    f.init(document.querySelector("section#main"))
 }
 main()
