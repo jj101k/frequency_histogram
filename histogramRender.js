@@ -29,6 +29,11 @@ class HistogramRender {
     #field
 
     /**
+     * @type {boolean | undefined}
+     */
+    #preferLog
+
+    /**
      *
      * @returns {[SVGPathElement, SVGSVGElement]}
      */
@@ -81,6 +86,35 @@ class HistogramRender {
 
     /**
      *
+     */
+    get preferLog() {
+        if(this.#preferLog === undefined) {
+            return "0"
+        } else if(this.#preferLog) {
+            return "1"
+        } else {
+            return "-1"
+        }
+    }
+    set preferLog(v) {
+        switch(v) {
+            case "1":
+                this.#preferLog = true
+                break
+            case "-1":
+                this.#preferLog = false
+                break
+            case "0":
+                this.#preferLog = undefined
+                break
+            default:
+                throw new Error(`Cannot parse ${v}`)
+        }
+        this.render()
+    }
+
+    /**
+     *
      * @param {HTMLElement} container
      */
     constructor(container) {
@@ -124,7 +158,7 @@ class HistogramRender {
             console.log(cumulativeDeltas)
         }
 
-        const scaler = new Scaler(this.#field)
+        const scaler = new Scaler(this.#field, this.#preferLog)
 
         const {dA, box, strokeWidth} = scaler.renderValues(cumulativeDeltas)
 
