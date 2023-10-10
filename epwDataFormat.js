@@ -265,7 +265,7 @@ class EpwNamedConstrainedNumberField extends EpwNamedNumberField {
     #options
 
     get exponentialValues() {
-        return ["Cd/m2", "lux", "Wh/m2"].includes(this.units ?? "")
+        return ["-"].includes(this.units ?? "")
     }
 
     get expectsExponentialFrequency() {
