@@ -10,7 +10,8 @@ class Histogram {
     #combineSubDelta
 
     /**
-     * @type {{deltas: {y: number, dF: number}[], zeroDeltaSpan: number} | undefined}
+     * @type {{deltas: {y: number, dF: number, zeroSpan?: undefined}[], zeroWidthPoints: {y: number,
+     * zeroSpan: number}[], zeroDeltaSpan: number} | undefined}
      */
     #deltaInfo
 
@@ -30,7 +31,7 @@ class Histogram {
     #parser
 
     /**
-     *
+     * This provides the deltas with all values with the same y value combined.
      */
     get combined() {
         if(!this.#deltaInfo) {
@@ -41,7 +42,169 @@ class Histogram {
          */
         const combinedDeltas = []
         const deltas = this.#deltaInfo.deltas
-        if(deltas.length) {
+        const zeroDeltaSpan = this.#deltaInfo.zeroDeltaSpan
+        const zeroWidthPoints = this.#deltaInfo.zeroWidthPoints
+
+        // When you have a-b-c and b is a zero point, you get:
+        // [a, Va]-[mid(a, b) V.(mid(a, b), mid(b, c))]-
+        // [mid(b, c) V.(mid(a, b), mid(b, c))]-[c, Vc]
+
+        // This tries to go through both lists to merge them, but future points
+        // may appear on either or both (we can imagine that past points
+        // cannot).
+
+        // Any non-zero points which happen to be at the same stop have to be
+        // stacked up, because a point will be deployed _before_ them.
+
+        if(deltas.length && zeroWidthPoints.length) {
+            /**
+             *
+             * @template {{y: number}} T
+             * @param {T[]} values
+             */
+            const shiftSameY = (values) => {
+                const v0 = values.shift()
+                if(!v0) {
+                    return []
+                }
+                const out = [v0]
+                while(values.length && values[0].y == v0.y) {
+                    out.push(values[0])
+                    values.shift()
+                }
+                return out
+            }
+
+            console.log(deltas, zeroWidthPoints)
+
+            /**
+             * @type {{y: number, dF: number}[]}
+             */
+            const normalisedDeltas = []
+            let nextZeroPoints = shiftSameY(zeroWidthPoints)
+            let nextSpanPoints = shiftSameY(deltas)
+            /**
+             * @type {number | undefined}
+             */
+            let lastY
+            while(nextSpanPoints.length && nextZeroPoints.length) {
+                if(nextSpanPoints[0].y < nextZeroPoints[0].y) {
+                    // If the span points are early, we can just push them.
+                    if(lastY === undefined || lastY != nextSpanPoints[0].y) {
+                        lastY = nextSpanPoints[0].y
+                    }
+                    normalisedDeltas.push(...nextSpanPoints)
+                    nextSpanPoints = shiftSameY(deltas)
+                    continue
+                }
+                // The current span point(s) are either EQUAL or GREATER.
+                /**
+                 * @type {number[]}
+                 */
+                const possibleNextY = []
+                if(nextSpanPoints[0].y > nextZeroPoints[0].y) {
+                    possibleNextY.push(nextSpanPoints[0].y)
+                } else if(deltas.length) {
+                    possibleNextY.push(deltas[0].y)
+                }
+                if(zeroWidthPoints.length) {
+                    possibleNextY.push(zeroWidthPoints[0].y)
+                }
+                if(possibleNextY.length) {
+                    const nextY = Math.min(...possibleNextY)
+                    if(lastY === undefined) {
+                        // Estimate
+                        lastY = nextZeroPoints[0].y - (nextY - nextSpanPoints[0].y)
+                    }
+                    const lY = lastY
+                    // Now we have the answer we can push the "before" value
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
+                    // Then the equal value, if applicable.
+                    if(nextSpanPoints[0].y == nextZeroPoints[0].y) {
+                        normalisedDeltas.push(...nextSpanPoints)
+                        nextSpanPoints = shiftSameY(deltas)
+                    }
+                    // Then the "after" value.
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (nextY + p.y), dF: -p.zeroSpan / (nextY - lY)})))
+                    lastY = nextZeroPoints[0].y
+                    nextZeroPoints = shiftSameY(zeroWidthPoints)
+                } else if(lastY === undefined) {
+                    // This would happen in principle if there was exactly one
+                    // point, which was a zero point.
+                    //
+                    // But that's caught above.
+                    throw new Error("Internal state error")
+                } else {
+                    // There are no next Y values. This happens if:
+                    // The current span is EQUAL and
+                    // There are no points after this.
+
+                    const nextY = nextZeroPoints[0].y + (nextZeroPoints[0].y - lastY)
+                    const lY = lastY
+
+                    // Now we have the answer we can push the "before" value
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
+                    // Then the equal value
+                    normalisedDeltas.push(...nextSpanPoints)
+                    // But we actually put the "after" value exactly on the point.
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lY)})))
+
+                    // And we know we're done
+                    break
+                }
+            }
+
+            // If there are non-zeroes left, just push them.
+            normalisedDeltas.push(...nextSpanPoints, ...deltas)
+
+            // If there are zeroes left, follow a tighter loop.
+            if(nextZeroPoints.length) {
+                while(zeroWidthPoints.length) {
+                    // The few towards the end
+                    const nextY = zeroWidthPoints[0].y
+                    if(lastY === undefined) {
+                        // Estimate
+                        lastY = nextZeroPoints[0].y - (nextY - nextSpanPoints[0].y)
+                    }
+                    const lY = lastY
+                    // Now we have the answer we can push the "before" value
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
+                    // Then the "after" value.
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (nextY + p.y) / 2, dF: -p.zeroSpan / (nextY - lY)})))
+                    lastY = nextZeroPoints[0].y
+                    nextZeroPoints = shiftSameY(zeroWidthPoints)
+                }
+                if(lastY === undefined) {
+                    // There is exactly one point, and it's a zero.
+                    const lastY = nextZeroPoints[0].y - zeroDeltaSpan
+                    const nextY = nextZeroPoints[0].y + zeroDeltaSpan
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lastY + p.y) / 2, dF: p.zeroSpan / (nextY - lastY)})))
+                    // But we actually put the "after" value exactly on the point.
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lastY)})))
+                } else {
+                    const lY = lastY
+                    // Very last zero point. Here, we'll have lastY only.
+                    const nextY = nextZeroPoints[0].y + (nextZeroPoints[0].y - lastY)
+                    // Now we have the answer we can push the "before" value
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
+                    // But we actually put the "after" value exactly on the point.
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lY)})))
+                }
+            }
+            console.log(normalisedDeltas)
+            if(normalisedDeltas.length) {
+                let last = {y: normalisedDeltas[0].y, dF: normalisedDeltas[0].dF}
+                combinedDeltas.push(last)
+                for(const d of normalisedDeltas) {
+                    if(d.y == last.y) {
+                        last.dF += d.dF
+                    } else {
+                        last = {y: d.y, dF: d.dF}
+                        combinedDeltas.push(last)
+                    }
+                }
+            }
+        } else {
             let last = {y: deltas[0].y, dF: deltas[0].dF}
             combinedDeltas.push(last)
             for(const d of deltas) {
@@ -53,7 +216,9 @@ class Histogram {
                 }
             }
         }
-        return {combinedDeltas, zeroDeltaSpan: this.#deltaInfo.zeroDeltaSpan}
+
+
+        return {combinedDeltas, zeroDeltaSpan}
     }
 
     /**
@@ -156,14 +321,25 @@ class Histogram {
 
             expectedMinDeltaY = realMinDeltaY
         }
-        const zeroDeltaSpan = expectedMinDeltaY / 2
+
+        // This will be a fraction, so we'll try to get a good decimal
+        // representation for sanity's sake.
+        const decimalDigits = 10
+        const nominalZeroDeltaSpan = expectedMinDeltaY / 2
+        const headDigits = Math.floor(Math.log10(nominalZeroDeltaSpan))
+        const roundTo = Math.pow(10, decimalDigits - headDigits)
+        const zeroDeltaSpan = Math.round(nominalZeroDeltaSpan * roundTo) / roundTo
 
         // Presume sorted in x
 
         /**
-         * @type {{y: number, dF: number}[]}
+         * @type {{y: number, dF: number, zeroSpan?: undefined}[]}
          */
         const deltas = []
+        /**
+         * @type {{y: number, zeroSpan: number}[]}
+         */
+        const zeroWidthPoints = []
         let lastY = dataPoints[0].y ?? 0
         let lastX = dataPoints[0].x
 
@@ -172,19 +348,26 @@ class Histogram {
             if(dataPoint.y === null || dataPoint.y === undefined) {
                 continue
             }
-            /**
-             * @type {number}
-             */
-            let lY
-            /**
-             * @type {number}
-             */
-            let hY
+            const dX = dataPoint.x - lastX
             if(Math.abs(dataPoint.y - lastY) < zeroDeltaSpan) {
-                const mid = Math.round((dataPoint.y + lastY) / 2 / zeroDeltaSpan) * zeroDeltaSpan
-                lY = mid - zeroDeltaSpan
-                hY = mid + zeroDeltaSpan
+                if(dataPoint.y === lastY) {
+                    // Either is fine
+                    zeroWidthPoints.push({y: dataPoint.y, zeroSpan: dX})
+                } else {
+                    // We pick one, whichever has the shortest decimal
+                    // representation.
+                    const shortest = [dataPoint.y, lastY].sort((a, b) => a.toString().length - b.toString().length)[0]
+                    zeroWidthPoints.push({y: shortest, zeroSpan: dX})
+                }
             } else {
+                /**
+                 * @type {number}
+                 */
+                let lY
+                /**
+                 * @type {number}
+                 */
+                let hY
                 if(dataPoint.y < lastY) {
                     lY = dataPoint.y
                     hY = lastY
@@ -192,22 +375,22 @@ class Histogram {
                     lY = lastY
                     hY = dataPoint.y
                 }
+                const dY = hY - lY
+                // Push ADD and REMOVE.
+                // We consider it to go UP at lY, go down at hY; and we consider
+                // the height to be dX/dY' where dY' = max(dY, minDelta)
+                const h = dX / dY
+                deltas.push({y: lY, dF: h})
+                deltas.push({y: hY, dF: -h})
             }
-            const dY = hY - lY
-            const dX = dataPoint.x - lastX
-            // Push ADD and REMOVE.
-            // We consider it to go UP at lY, go down at hY; and we consider
-            // the height to be dX/dY' where dY' = max(dY, minDelta)
-            const h = dX / dY
-            deltas.push({y: lY, dF: h})
-            deltas.push({y: hY, dF: -h})
 
             lastY = dataPoint.y
             lastX = dataPoint.x
         }
         deltas.sort((a, b) => a.y - b.y)
+        zeroWidthPoints.sort((a, b) => a.y - b.y)
 
-        return {deltas, zeroDeltaSpan}
+        return {deltas, zeroDeltaSpan, zeroWidthPoints}
     }
 
 
