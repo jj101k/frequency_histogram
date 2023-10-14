@@ -75,8 +75,6 @@ class Histogram {
                 return out
             }
 
-            console.log(deltas, zeroWidthPoints)
-
             /**
              * @type {{y: number, dF: number}[]}
              */
@@ -191,7 +189,6 @@ class Histogram {
                     normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lY)})))
                 }
             }
-            console.log(normalisedDeltas)
             if(normalisedDeltas.length) {
                 let last = {y: normalisedDeltas[0].y, dF: normalisedDeltas[0].dF}
                 combinedDeltas.push(last)
@@ -217,7 +214,6 @@ class Histogram {
             }
         }
 
-
         return {combinedDeltas, zeroDeltaSpan}
     }
 
@@ -242,8 +238,6 @@ class Histogram {
         if(!this.#combineSubDelta) {
             return cumulativeDeltas
         }
-
-        // console.log("ZDS:" + this.combined.zeroDeltaSpan)
 
         /**
          * @type {{y: number, f: number}[]}
