@@ -107,7 +107,7 @@ class EpwParser {
             }
             console.log(`${l}: ${c}`)
         } else {
-            console.log(r)
+            console.log("Raw values", r)
         }
         return r
     }

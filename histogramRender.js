@@ -172,7 +172,7 @@ class HistogramRender {
         const cumulativeDeltas = histogram.cumulativeDeltas
 
         if (this.debug) {
-            console.log(cumulativeDeltas)
+            console.log("Deltas", cumulativeDeltas)
         }
 
         const scaler = new Scaler(this.#field, this.#preferLog)
