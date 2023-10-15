@@ -29,6 +29,11 @@ class HistogramRender {
     #field
 
     /**
+     *
+     */
+    #first24 = false
+
+    /**
      * @type {boolean | undefined}
      */
     #preferLog
@@ -70,6 +75,17 @@ class HistogramRender {
     }
     set field(v) {
         this.#field = v
+        this.render()
+    }
+
+    /**
+     *
+     */
+    get first24() {
+        return this.#first24
+    }
+    set first24(v) {
+        this.#first24 = v
         this.render()
     }
 
@@ -138,6 +154,7 @@ class HistogramRender {
             return undefined
         }
         this.histogram.fieldInfo = {field: this.#field}
+        this.histogram.limit = this.#first24 ? 24 : undefined
         return this.histogram
     }
 

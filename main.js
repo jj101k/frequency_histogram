@@ -27,7 +27,7 @@ function main() {
             return this.field.units
         },
     }
-    Frameworker.proxy(retainedData, hr, ["plain", "debug", "field", "preferLog"],
+    Frameworker.proxy(retainedData, hr, ["plain", "debug", "field", "preferLog", "first24"],
         {}, [])
 
     const f = new Frameworker(retainedData)

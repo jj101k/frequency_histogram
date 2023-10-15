@@ -26,6 +26,11 @@ class Histogram {
     #frequencies
 
     /**
+     * @type {number | undefined}
+     */
+    #limit
+
+    /**
      *
      */
     #parser
@@ -286,10 +291,22 @@ class Histogram {
 
     /**
      *
+     */
+    get limit() {
+        return this.#limit
+    }
+    set limit(v) {
+        this.#limit = v
+        this.#deltaInfo = undefined
+        this.#frequencies = undefined
+    }
+
+    /**
+     *
      * @returns
      */
     getDeltas() {
-        const dataPoints = this.#parser.getValues(this.#fieldInfo.field)
+        const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit)
 
         let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
         if(expectedMinDeltaY === undefined) {
@@ -393,7 +410,7 @@ class Histogram {
      * @returns
      */
     getFrequencies() {
-        const dataPoints = this.#parser.getValues(this.#fieldInfo.field)
+        const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit)
 
         /**
          * @type {Record<number, number>}
