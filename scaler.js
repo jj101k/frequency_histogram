@@ -74,6 +74,13 @@ class SvgPathRenderer {
  */
 class Scaler {
     /**
+     * Below this limit, points will be rendered correctly for the data (all
+     * lines perpendicular); above, it will be rendered in a more representative
+     * way for the underlying expectations, as directly connected points.
+     */
+    static renderSquareLimit = 50
+
+    /**
      *
      */
     #field
@@ -147,7 +154,7 @@ class Scaler {
         const firstPos = { x: this.displayValue(values[0].y, logOffset), y: this.displayFrequency(values[0].f) * rescale }
         const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
 
-        const renderSquare = values.length < 20
+        const renderSquare = values.length < Scaler.renderSquareLimit
 
 
         if (renderSquare) {
