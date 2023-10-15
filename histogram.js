@@ -5,11 +5,6 @@
  */
 class Histogram {
     /**
-     *
-     */
-    #combineSubDelta
-
-    /**
      * @type {{deltas: {y: number, dF: number, zeroSpan?: undefined}[], zeroWidthPoints: {y: number,
      * zeroSpan: number}[], zeroDeltaSpan: number} | undefined}
      */
@@ -240,27 +235,7 @@ class Histogram {
             }
         }
 
-        if(!this.#combineSubDelta) {
-            return cumulativeDeltas
-        }
-
-        /**
-         * @type {{y: number, f: number}[]}
-         */
-        const recombinedCumulativeDeltas = [cumulativeDeltas[0]]
-        let lastRecombinedDelta = cumulativeDeltas[0]
-        for(const delta of cumulativeDeltas.slice(1)) {
-            const diff = delta.y - lastRecombinedDelta.y
-            if(diff == 0 || diff > combined.zeroDeltaSpan) {
-                recombinedCumulativeDeltas.push(delta)
-                lastRecombinedDelta = delta
-            } else {
-                // Note: only supports _one_
-                lastRecombinedDelta.f = (lastRecombinedDelta.f + delta.f) / 2
-            }
-        }
-
-        return recombinedCumulativeDeltas
+        return cumulativeDeltas
     }
 
     get deltas() {
@@ -431,11 +406,8 @@ class Histogram {
     /**
      *
      * @param {EpwParser} parser
-     * @param {boolean} combineSubDelta If true, spans less than delta
-     * (typically, zero) will be combined with their non-delta counterparts
      */
-    constructor(parser, combineSubDelta = false) {
+    constructor(parser) {
         this.#parser = parser
-        this.#combineSubDelta = combineSubDelta
     }
 }
