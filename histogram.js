@@ -363,8 +363,18 @@ class Histogram {
                 }
                 const dY = hY - lY
                 // Push ADD and REMOVE.
+                //
                 // We consider it to go UP at lY, go down at hY; and we consider
-                // the height to be dX/dY' where dY' = max(dY, minDelta)
+                // the height to be dX / dY.
+                //
+                // Some explanation needed here: this represents the time at the
+                // point value. If the spread of (dY) values is twice as much,
+                // the time at any point is half as much. If the spread of time
+                // (dX) is twice as much (as would be true if you just added
+                // adjacent periods), the time at any point is twie as much.
+                // Thus dX / dY.
+                //
+                // Most of the time here, dX will be 1.
                 const h = dX / dY
                 deltas.push({y: lY, dF: h})
                 deltas.push({y: hY, dF: -h})
