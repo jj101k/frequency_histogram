@@ -59,40 +59,63 @@ class Histogram {
         if(deltas.length && zeroWidthPoints.length) {
             /**
              *
-             * @template {{y: number}} T
-             * @param {T[]} values
+             * @param {{y: number, dF: number}[]} values
              */
-            const shiftSameY = (values) => {
+            const combineSpans = (values) => {
                 const v0 = values.shift()
                 if(!v0) {
-                    return []
+                    return null
                 }
-                const out = [v0]
+                const out = {...v0}
                 while(values.length && values[0].y == v0.y) {
-                    out.push(values[0])
+                    out.dF += values[0].y
                     values.shift()
                 }
                 return out
             }
-
             /**
-             * @type {{y: number, dF: number}[]}
+             *
+             * @param {{y: number, zeroSpan: number}[]} values
              */
-            const normalisedDeltas = []
-            let nextZeroPoints = shiftSameY(zeroWidthPoints)
-            let nextSpanPoints = shiftSameY(deltas)
+            const combineZeroes = (values) => {
+                const v0 = values.shift()
+                if(!v0) {
+                    return null
+                }
+                const out = {...v0}
+                while(values.length && values[0].y == v0.y) {
+                    out.zeroSpan += values[0].y
+                    values.shift()
+                }
+                return out
+            }
+            /**
+             *
+             * @param {{y: number, zeroSpan: number}} zeroPoint
+             * @param {number} lowY
+             * @param {number} highY
+             */
+            const zeroPointsAt = (zeroPoint, lowY, highY) => {
+                return [
+                    {y: (lowY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (highY - lowY)},
+                    {y: (highY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (highY - lowY)},
+                ]
+            }
+
+            let nextZeroPoint = combineZeroes(zeroWidthPoints)
+            let nextSpanPoint = combineSpans(deltas)
             /**
              * @type {number | undefined}
              */
             let lastY
-            while(nextSpanPoints.length && nextZeroPoints.length) {
-                if(nextSpanPoints[0].y < nextZeroPoints[0].y) {
+            while(nextSpanPoint && nextZeroPoint) {
+                if(nextSpanPoint.y < nextZeroPoint.y) {
                     // If the span points are early, we can just push them.
-                    if(lastY === undefined || lastY != nextSpanPoints[0].y) {
-                        lastY = nextSpanPoints[0].y
+                    if(lastY === undefined || lastY != nextSpanPoint.y) {
+                        lastY = nextSpanPoint.y
                     }
-                    normalisedDeltas.push(...nextSpanPoints)
-                    nextSpanPoints = shiftSameY(deltas)
+                    combinedDeltas.push(nextSpanPoint)
+                    nextSpanPoint = combineSpans(deltas)
                     continue
                 }
                 // The current span point(s) are either EQUAL or GREATER.
@@ -100,8 +123,8 @@ class Histogram {
                  * @type {number[]}
                  */
                 const possibleNextY = []
-                if(nextSpanPoints[0].y > nextZeroPoints[0].y) {
-                    possibleNextY.push(nextSpanPoints[0].y)
+                if(nextSpanPoint.y > nextZeroPoint.y) {
+                    possibleNextY.push(nextSpanPoint.y)
                 } else if(deltas.length) {
                     possibleNextY.push(deltas[0].y)
                 }
@@ -112,20 +135,20 @@ class Histogram {
                     const nextY = Math.min(...possibleNextY)
                     if(lastY === undefined) {
                         // Estimate
-                        lastY = nextZeroPoints[0].y - (nextY - nextSpanPoints[0].y)
+                        lastY = nextZeroPoint.y - (nextY - nextSpanPoint.y)
                     }
-                    const lY = lastY
+                    const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lastY, nextY)
                     // Now we have the answer we can push the "before" value
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
+                    combinedDeltas.push(lowZeroPoint)
                     // Then the equal value, if applicable.
-                    if(nextSpanPoints[0].y == nextZeroPoints[0].y) {
-                        normalisedDeltas.push(...nextSpanPoints)
-                        nextSpanPoints = shiftSameY(deltas)
+                    if(nextSpanPoint.y == nextZeroPoint.y) {
+                        combinedDeltas.push(nextSpanPoint)
+                        nextSpanPoint = combineSpans(deltas)
                     }
                     // Then the "after" value.
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (nextY + p.y) / 2, dF: -p.zeroSpan / (nextY - lY)})))
-                    lastY = nextZeroPoints[0].y
-                    nextZeroPoints = shiftSameY(zeroWidthPoints)
+                    combinedDeltas.push(highZeroPoint)
+                    lastY = nextZeroPoint.y
+                    nextZeroPoint = combineZeroes(zeroWidthPoints)
                 } else if(lastY === undefined) {
                     // This would happen in principle if there was exactly one
                     // point, which was a zero point.
@@ -137,15 +160,17 @@ class Histogram {
                     // The current span is EQUAL and
                     // There are no points after this.
 
-                    const nextY = nextZeroPoints[0].y + (nextZeroPoints[0].y - lastY)
+                    const nextY = nextZeroPoint.y + (nextZeroPoint.y - lastY)
                     const lY = lastY
 
+                    const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lY, nextY)
+
                     // Now we have the answer we can push the "before" value
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
+                    combinedDeltas.push(lowZeroPoint)
                     // Then the equal value
-                    normalisedDeltas.push(...nextSpanPoints)
+                    combinedDeltas.push(nextSpanPoint)
                     // But we actually put the "after" value exactly on the point.
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lY)})))
+                    combinedDeltas.push(highZeroPoint)
 
                     // And we know we're done
                     break
@@ -153,52 +178,45 @@ class Histogram {
             }
 
             // If there are non-zeroes left, just push them.
-            normalisedDeltas.push(...nextSpanPoints, ...deltas)
+            if(nextSpanPoint) {
+                combinedDeltas.push(nextSpanPoint)
+            }
+            let last = {y: deltas[0].y, dF: deltas[0].dF}
+            combinedDeltas.push(last)
+            for(const d of deltas.slice(1)) {
+                if(d.y == last.y) {
+                    last.dF += d.dF
+                } else {
+                    last = {y: d.y, dF: d.dF}
+                    combinedDeltas.push(last)
+                }
+            }
 
             // If there are zeroes left, follow a tighter loop.
-            if(nextZeroPoints.length) {
+            if(nextZeroPoint) {
                 while(zeroWidthPoints.length) {
                     // The few towards the end
                     const nextY = zeroWidthPoints[0].y
                     if(lastY === undefined) {
                         // Estimate
-                        lastY = nextZeroPoints[0].y - (nextY - nextZeroPoints[0].y)
+                        lastY = nextZeroPoint.y - (nextY - nextZeroPoint.y)
                     }
-                    const lY = lastY
-                    // Now we have the answer we can push the "before" value
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
-                    // Then the "after" value.
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (nextY + p.y) / 2, dF: -p.zeroSpan / (nextY - lY)})))
-                    lastY = nextZeroPoints[0].y
-                    nextZeroPoints = shiftSameY(zeroWidthPoints)
+                    combinedDeltas.push(...zeroPointsAt(nextZeroPoint, lastY, nextY))
+                    lastY = nextZeroPoint.y
+                    nextZeroPoint = combineZeroes(zeroWidthPoints)
+                    if(!nextZeroPoint) {
+                        throw new Error("Internal error")
+                    }
                 }
                 if(lastY === undefined) {
                     // There is exactly one point, and it's a zero.
-                    const lastY = nextZeroPoints[0].y - zeroDeltaSpan
-                    const nextY = nextZeroPoints[0].y + zeroDeltaSpan
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lastY + p.y) / 2, dF: p.zeroSpan / (nextY - lastY)})))
-                    // But we actually put the "after" value exactly on the point.
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lastY)})))
+                    const lastY = nextZeroPoint.y - zeroDeltaSpan
+                    const nextY = nextZeroPoint.y + zeroDeltaSpan
+                    combinedDeltas.push(...zeroPointsAt(nextZeroPoint, lastY, nextY))
                 } else {
-                    const lY = lastY
                     // Very last zero point. Here, we'll have lastY only.
-                    const nextY = nextZeroPoints[0].y + (nextZeroPoints[0].y - lastY)
-                    // Now we have the answer we can push the "before" value
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (lY + p.y) / 2, dF: p.zeroSpan / (nextY - lY)})))
-                    // But we actually put the "after" value exactly on the point.
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: p.y, dF: -p.zeroSpan / (nextY - lY)})))
-                }
-            }
-            if(normalisedDeltas.length) {
-                let last = {y: normalisedDeltas[0].y, dF: normalisedDeltas[0].dF}
-                combinedDeltas.push(last)
-                for(const d of normalisedDeltas.slice(1)) {
-                    if(d.y == last.y) {
-                        last.dF += d.dF
-                    } else {
-                        last = {y: d.y, dF: d.dF}
-                        combinedDeltas.push(last)
-                    }
+                    const nextY = nextZeroPoint.y + (nextZeroPoint.y - lastY)
+                    combinedDeltas.push(...zeroPointsAt(nextZeroPoint, lastY, nextY))
                 }
             }
         } else {
