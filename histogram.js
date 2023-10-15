@@ -192,7 +192,7 @@ class Histogram {
             if(normalisedDeltas.length) {
                 let last = {y: normalisedDeltas[0].y, dF: normalisedDeltas[0].dF}
                 combinedDeltas.push(last)
-                for(const d of normalisedDeltas) {
+                for(const d of normalisedDeltas.slice(1)) {
                     if(d.y == last.y) {
                         last.dF += d.dF
                     } else {
