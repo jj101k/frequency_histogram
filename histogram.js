@@ -123,7 +123,7 @@ class Histogram {
                         nextSpanPoints = shiftSameY(deltas)
                     }
                     // Then the "after" value.
-                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (nextY + p.y), dF: -p.zeroSpan / (nextY - lY)})))
+                    normalisedDeltas.push(...nextZeroPoints.map(p => ({y: (nextY + p.y) / 2, dF: -p.zeroSpan / (nextY - lY)})))
                     lastY = nextZeroPoints[0].y
                     nextZeroPoints = shiftSameY(zeroWidthPoints)
                 } else if(lastY === undefined) {
