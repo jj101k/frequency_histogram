@@ -162,7 +162,7 @@ class Histogram {
                     const nextY = zeroWidthPoints[0].y
                     if(lastY === undefined) {
                         // Estimate
-                        lastY = nextZeroPoints[0].y - (nextY - nextSpanPoints[0].y)
+                        lastY = nextZeroPoints[0].y - (nextY - nextZeroPoints[0].y)
                     }
                     const lY = lastY
                     // Now we have the answer we can push the "before" value
