@@ -68,7 +68,7 @@ class Histogram {
                 }
                 const out = {...v0}
                 while(values.length && values[0].y == v0.y) {
-                    out.dF += values[0].y
+                    out.dF += values[0].dF
                     values.shift()
                 }
                 return out
@@ -84,7 +84,7 @@ class Histogram {
                 }
                 const out = {...v0}
                 while(values.length && values[0].y == v0.y) {
-                    out.zeroSpan += values[0].y
+                    out.zeroSpan += values[0].zeroSpan
                     values.shift()
                 }
                 return out
