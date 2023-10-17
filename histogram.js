@@ -56,6 +56,34 @@ class Histogram {
         // Any non-zero points which happen to be at the same stop have to be
         // stacked up, because a point will be deployed _before_ them.
 
+        /**
+         *
+         * @param {{y: number, dF: number}[]} values
+         */
+        const addDeltas = (...values) => {
+            if(!values.length) {
+                return 0
+            }
+            let vL = combinedDeltas[combinedDeltas.length - 1]
+            let added = 0
+            if(!vL) {
+                vL = values[0]
+                values.shift()
+                combinedDeltas.push(vL)
+                added++
+            }
+            for(const v of values) {
+                if(v.y == vL.y) {
+                    vL.dF += v.dF
+                } else {
+                    combinedDeltas.push(v)
+                    added++
+                    vL = v
+                }
+            }
+            return added
+        }
+
         if(deltas.length && zeroWidthPoints.length) {
             /**
              *
@@ -114,7 +142,7 @@ class Histogram {
                     if(lastY === undefined || lastY != nextSpanPoint.y) {
                         lastY = nextSpanPoint.y
                     }
-                    combinedDeltas.push(nextSpanPoint)
+                    addDeltas(nextSpanPoint)
                     nextSpanPoint = combineSpans(deltas)
                     continue
                 }
@@ -139,14 +167,14 @@ class Histogram {
                     }
                     const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lastY, nextY)
                     // Now we have the answer we can push the "before" value
-                    combinedDeltas.push(lowZeroPoint)
+                    addDeltas(lowZeroPoint)
                     // Then the equal value, if applicable.
                     if(nextSpanPoint.y == nextZeroPoint.y) {
-                        combinedDeltas.push(nextSpanPoint)
+                        addDeltas(nextSpanPoint)
                         nextSpanPoint = combineSpans(deltas)
                     }
                     // Then the "after" value.
-                    combinedDeltas.push(highZeroPoint)
+                    addDeltas(highZeroPoint)
                     lastY = nextZeroPoint.y
                     nextZeroPoint = combineZeroes(zeroWidthPoints)
                 } else if(lastY === undefined) {
@@ -166,11 +194,11 @@ class Histogram {
                     const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lY, nextY)
 
                     // Now we have the answer we can push the "before" value
-                    combinedDeltas.push(lowZeroPoint)
+                    addDeltas(lowZeroPoint)
                     // Then the equal value
-                    combinedDeltas.push(nextSpanPoint)
+                    addDeltas(nextSpanPoint)
                     // But we actually put the "after" value exactly on the point.
-                    combinedDeltas.push(highZeroPoint)
+                    addDeltas(highZeroPoint)
 
                     // And we know we're done
                     break
@@ -179,20 +207,9 @@ class Histogram {
 
             // If there are non-zeroes left, just push them.
             if(nextSpanPoint) {
-                combinedDeltas.push(nextSpanPoint)
+                addDeltas(nextSpanPoint)
             }
-            if(deltas.length) {
-                let last = {y: deltas[0].y, dF: deltas[0].dF}
-                combinedDeltas.push(last)
-                for(const d of deltas.slice(1)) {
-                    if(d.y == last.y) {
-                        last.dF += d.dF
-                    } else {
-                        last = {y: d.y, dF: d.dF}
-                        combinedDeltas.push(last)
-                    }
-                }
-            }
+            addDeltas(...deltas)
 
             // If there are zeroes left, follow a tighter loop.
             if(nextZeroPoint) {
@@ -203,7 +220,7 @@ class Histogram {
                         // Estimate
                         lastY = nextZeroPoint.y - (nextY - nextZeroPoint.y)
                     }
-                    combinedDeltas.push(...zeroPointsAt(nextZeroPoint, lastY, nextY))
+                    addDeltas(...zeroPointsAt(nextZeroPoint, lastY, nextY))
                     lastY = nextZeroPoint.y
                     nextZeroPoint = combineZeroes(zeroWidthPoints)
                     if(!nextZeroPoint) {
@@ -214,24 +231,15 @@ class Histogram {
                     // There is exactly one point, and it's a zero.
                     const lastY = nextZeroPoint.y - zeroDeltaSpan
                     const nextY = nextZeroPoint.y + zeroDeltaSpan
-                    combinedDeltas.push(...zeroPointsAt(nextZeroPoint, lastY, nextY))
+                    addDeltas(...zeroPointsAt(nextZeroPoint, lastY, nextY))
                 } else {
                     // Very last zero point. Here, we'll have lastY only.
                     const nextY = nextZeroPoint.y + (nextZeroPoint.y - lastY)
-                    combinedDeltas.push(...zeroPointsAt(nextZeroPoint, lastY, nextY))
+                    addDeltas(...zeroPointsAt(nextZeroPoint, lastY, nextY))
                 }
             }
         } else {
-            let last = {y: deltas[0].y, dF: deltas[0].dF}
-            combinedDeltas.push(last)
-            for(const d of deltas.slice(1)) {
-                if(d.y == last.y) {
-                    last.dF += d.dF
-                } else {
-                    last = {y: d.y, dF: d.dF}
-                    combinedDeltas.push(last)
-                }
-            }
+            addDeltas(...deltas)
         }
 
         return {combinedDeltas, zeroDeltaSpan}
