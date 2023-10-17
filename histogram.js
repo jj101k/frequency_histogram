@@ -181,14 +181,16 @@ class Histogram {
             if(nextSpanPoint) {
                 combinedDeltas.push(nextSpanPoint)
             }
-            let last = {y: deltas[0].y, dF: deltas[0].dF}
-            combinedDeltas.push(last)
-            for(const d of deltas.slice(1)) {
-                if(d.y == last.y) {
-                    last.dF += d.dF
-                } else {
-                    last = {y: d.y, dF: d.dF}
-                    combinedDeltas.push(last)
+            if(deltas.length) {
+                let last = {y: deltas[0].y, dF: deltas[0].dF}
+                combinedDeltas.push(last)
+                for(const d of deltas.slice(1)) {
+                    if(d.y == last.y) {
+                        last.dF += d.dF
+                    } else {
+                        last = {y: d.y, dF: d.dF}
+                        combinedDeltas.push(last)
+                    }
                 }
             }
 
