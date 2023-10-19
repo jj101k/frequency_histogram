@@ -327,18 +327,23 @@ class Histogram {
                     yValues.add(dataPoint.y)
                 }
             }
-            let realMinDeltaY = Infinity
-            const yValuesOrdered = [...yValues].sort((a, b) => a - b)
-            let lastYValue = yValuesOrdered[0]
-            for(const yValue of yValuesOrdered.slice(1)) {
-                const deltaY = yValue - lastYValue
-                if(deltaY < realMinDeltaY) {
-                    realMinDeltaY = deltaY
+            if(yValues.size > 1) {
+                let realMinDeltaY = Infinity
+                const yValuesOrdered = [...yValues].sort((a, b) => a - b)
+                let lastYValue = yValuesOrdered[0]
+                for(const yValue of yValuesOrdered.slice(1)) {
+                    const deltaY = yValue - lastYValue
+                    if(deltaY < realMinDeltaY) {
+                        realMinDeltaY = deltaY
+                    }
+                    lastYValue = yValue
                 }
-                lastYValue = yValue
-            }
 
-            expectedMinDeltaY = realMinDeltaY
+                expectedMinDeltaY = realMinDeltaY
+            } else {
+                console.warn("Not enough distinct values for a delta calculation, will use 1")
+                expectedMinDeltaY = 1
+            }
         }
 
         // This will be a fraction, so we'll try to get a good decimal
