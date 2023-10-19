@@ -189,19 +189,17 @@ class Histogram {
                     // There are no points after this.
 
                     const nextY = nextZeroPoint.y + (nextZeroPoint.y - lastY)
-                    const lY = lastY
 
-                    const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lY, nextY)
+                    const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lastY, nextY)
 
                     // Now we have the answer we can push the "before" value
                     addDeltas(lowZeroPoint)
                     // Then the equal value
                     addDeltas(nextSpanPoint)
+                    nextSpanPoint = combineSpans(deltas)
                     // But we actually put the "after" value exactly on the point.
                     addDeltas(highZeroPoint)
-
-                    // And we know we're done
-                    break
+                    nextZeroPoint = combineZeroes(zeroWidthPoints)
                 }
             }
 
