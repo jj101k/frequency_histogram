@@ -3,6 +3,285 @@
 /**
  *
  */
+class HistogramDeltas {
+    /**
+     * @type {{y: number, dF: number}[]}
+     */
+    #combinedDeltas = []
+    /**
+     * @type {number | undefined}
+     */
+    #lastY
+    /**
+     * @type {{y: number, dF: number} | null}
+     */
+    #nextSpanPoint = null
+    /**
+     * @type {{y: number, zeroSpan: number} | null}
+     */
+    #nextZeroPoint = null
+    /**
+     *
+     */
+    #spanPoints
+    /**
+     *
+     */
+    #zeroDeltaSpan
+    /**
+     *
+     */
+    #zeroWidthPoints
+
+    /**
+     *
+     * @param {{y: number, dF: number}[]} values
+     */
+    #addDeltas(...values) {
+        if(!values.length) {
+            return 0
+        }
+        let vL = this.#combinedDeltas[this.#combinedDeltas.length - 1]
+        let added = 0
+        if(!vL) {
+            vL = values[0]
+            values.shift()
+            this.#combinedDeltas.push(vL)
+            added++
+        }
+        for(const v of values) {
+            if(v.y == vL.y) {
+                vL.dF += v.dF
+            } else {
+                this.#combinedDeltas.push(v)
+                added++
+                vL = v
+            }
+        }
+        return added
+    }
+
+    /**
+     *
+     */
+    #addNextSpanPoint() {
+        if(this.#nextSpanPoint) {
+            this.#addDeltas(this.#nextSpanPoint)
+            this.#getNextSpanPoint()
+        }
+    }
+
+    /**
+     *
+     */
+    #addRemainingSpanPoints() {
+        if(this.#nextSpanPoint) {
+            this.#addDeltas(this.#nextSpanPoint)
+            this.#nextSpanPoint = null
+        }
+        this.#addDeltas(...this.#spanPoints)
+        this.#spanPoints = []
+    }
+
+    /**
+     *
+     * @param {number} lastY
+     * @param {number} nextY
+     */
+    #addZeroPointSpanning(lastY, nextY) {
+        if(this.#nextZeroPoint) {
+            const nextLastY = this.#nextZeroPoint.y
+            const [lowZeroPoint, highZeroPoint] = this.#zeroPointsAt(this.#nextZeroPoint, lastY, nextY)
+            // Now we have the answer we can push the "before" value
+            this.#addDeltas(lowZeroPoint)
+            // Then the equal value, if applicable.
+            if (this.#nextSpanPoint && this.#nextSpanPoint.y == this.#nextZeroPoint.y) {
+                this.#addNextSpanPoint()
+            }
+            // Then the "after" value.
+            this.#addDeltas(highZeroPoint)
+            this.#nextZeroPoint = this.#shiftZeroPoints()
+            this.#lastY = nextLastY
+        }
+    }
+
+    /**
+     *
+     */
+    #getNextSpanPoint() {
+        this.#nextSpanPoint = this.#shiftSpanPoints()
+    }
+
+    /**
+     *
+     * @returns
+     */
+    #shiftSpanPoints() {
+        const v0 = this.#spanPoints.shift()
+        if(!v0) {
+            return null
+        }
+        const out = {...v0}
+        while(this.#spanPoints.length && this.#spanPoints[0].y == v0.y) {
+            out.dF += this.#spanPoints[0].dF
+            this.#spanPoints.shift()
+        }
+        return out
+    }
+
+    /**
+     *
+     * @returns
+     */
+    #shiftZeroPoints() {
+        const v0 = this.#zeroWidthPoints.shift()
+        if(!v0) {
+            return null
+        }
+        const out = {...v0}
+        while(this.#zeroWidthPoints.length && this.#zeroWidthPoints[0].y == v0.y) {
+            out.zeroSpan += this.#zeroWidthPoints[0].zeroSpan
+            this.#zeroWidthPoints.shift()
+        }
+        return out
+    }
+
+    /**
+     *
+     * @param {{y: number, zeroSpan: number}} zeroPoint
+     * @param {number} lowY
+     * @param {number} highY
+     */
+    #zeroPointsAt(zeroPoint, lowY, highY) {
+        return [
+            {y: (lowY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (highY - lowY)},
+            {y: (highY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (highY - lowY)},
+        ]
+    }
+
+    /**
+     *
+     * @param {{y: number, dF: number}[]} deltas
+     * @param {number} zeroDeltaSpan
+     * @param {{y: number, zeroSpan: number}[]} zeroWidthPoints
+     */
+    constructor(deltas, zeroDeltaSpan, zeroWidthPoints) {
+        this.#spanPoints = deltas
+        this.#zeroDeltaSpan = zeroDeltaSpan
+        this.#zeroWidthPoints = zeroWidthPoints
+    }
+
+    /**
+     * This provides the deltas with all values with the same y value combined.
+     */
+    get combined() {
+        // When you have a-b-c and b is a zero point, you get:
+        // [a, Va]-[mid(a, b) V.(mid(a, b), mid(b, c))]-
+        // [mid(b, c) V.(mid(a, b), mid(b, c))]-[c, Vc]
+
+        // This tries to go through both lists to merge them, but future points
+        // may appear on either or both (we can imagine that past points
+        // cannot).
+
+        // Any non-zero points which happen to be at the same stop have to be
+        // stacked up, because a point will be deployed _before_ them.
+
+        if(this.#zeroWidthPoints.length) {
+            this.#nextZeroPoint = this.#shiftZeroPoints()
+            this.#getNextSpanPoint()
+            while(this.#nextSpanPoint && this.#nextZeroPoint) {
+                if(this.#nextSpanPoint.y < this.#nextZeroPoint.y) {
+                    // If the span points are early, we can just push them.
+                    if(this.#lastY === undefined || this.#lastY != this.#nextSpanPoint.y) {
+                        this.#lastY = this.#nextSpanPoint.y
+                    }
+                    this.#addNextSpanPoint()
+                    continue
+                }
+                // The current span point(s) are either EQUAL or GREATER.
+                /**
+                 * @type {number[]}
+                 */
+                const possibleNextY = []
+                if(this.#nextSpanPoint.y > this.#nextZeroPoint.y) {
+                    possibleNextY.push(this.#nextSpanPoint.y)
+                } else if(this.#spanPoints.length) {
+                    possibleNextY.push(this.#spanPoints[0].y)
+                }
+                if(this.#zeroWidthPoints.length) {
+                    possibleNextY.push(this.#zeroWidthPoints[0].y)
+                }
+                if(possibleNextY.length) {
+                    const nextY = Math.min(...possibleNextY)
+                    if(this.#lastY === undefined) {
+                        // Estimate
+                        this.#lastY = this.#nextZeroPoint.y - (nextY - this.#nextSpanPoint.y)
+                    }
+                    this.#addZeroPointSpanning(this.#lastY, nextY)
+                } else if(this.#lastY === undefined) {
+                    // This would happen if if there were exactly one point,
+                    // which was a zero point.
+
+                    // This is actually handled below.
+                    break
+                } else {
+                    // There are no next Y values. This happens if:
+                    // The current span is EQUAL and
+                    // There are no points after this.
+
+                    const nextY = this.#nextZeroPoint.y + (this.#nextZeroPoint.y - this.#lastY)
+
+                    this.#addZeroPointSpanning(this.#lastY, nextY)
+                }
+            }
+
+            // If there are non-zeroes left, just push them.
+            this.#addRemainingSpanPoints()
+
+            // If there are zeroes left, follow a tighter loop.
+            if(this.#nextZeroPoint) {
+                while(this.#zeroWidthPoints.length) {
+                    // The few towards the end
+                    const nextY = this.#zeroWidthPoints[0].y
+                    if(this.#lastY === undefined) {
+                        // Estimate
+                        this.#lastY = this.#nextZeroPoint.y - (nextY - this.#nextZeroPoint.y)
+                    }
+                    this.#addZeroPointSpanning(this.#lastY, nextY)
+                    if(!this.#nextZeroPoint) {
+                        throw new Error("Internal error")
+                    }
+                }
+                /**
+                 * @type {number}
+                 */
+                let lY
+                /**
+                 * @type {number}
+                 */
+                let nY
+                if(this.#lastY === undefined) {
+                    // There is exactly one point, and it's a zero.
+                    lY = this.#nextZeroPoint.y - this.#zeroDeltaSpan
+                    nY = this.#nextZeroPoint.y + this.#zeroDeltaSpan
+                } else {
+                    // Very last zero point. Here, we'll have this.#lastY only.
+                    lY = this.#lastY
+                    nY = this.#nextZeroPoint.y + (this.#nextZeroPoint.y - this.#lastY)
+                }
+                this.#addZeroPointSpanning(lY, nY)
+            }
+        } else {
+            this.#addRemainingSpanPoints()
+        }
+
+        return {combinedDeltas: this.#combinedDeltas, zeroDeltaSpan: this.#zeroDeltaSpan}
+    }
+}
+
+/**
+ *
+ */
 class Histogram {
     /**
      * @type {{deltas: {y: number, dF: number, zeroSpan?: undefined}[], zeroWidthPoints: {y: number,
@@ -37,210 +316,7 @@ class Histogram {
         if(!this.#deltaInfo) {
             this.#deltaInfo = this.getDeltas()
         }
-        /**
-         * @type {{y: number, dF: number}[]}
-         */
-        const combinedDeltas = []
-        const deltas = this.#deltaInfo.deltas
-        const zeroDeltaSpan = this.#deltaInfo.zeroDeltaSpan
-        const zeroWidthPoints = this.#deltaInfo.zeroWidthPoints
-
-        // When you have a-b-c and b is a zero point, you get:
-        // [a, Va]-[mid(a, b) V.(mid(a, b), mid(b, c))]-
-        // [mid(b, c) V.(mid(a, b), mid(b, c))]-[c, Vc]
-
-        // This tries to go through both lists to merge them, but future points
-        // may appear on either or both (we can imagine that past points
-        // cannot).
-
-        // Any non-zero points which happen to be at the same stop have to be
-        // stacked up, because a point will be deployed _before_ them.
-
-        /**
-         *
-         * @param {{y: number, dF: number}[]} values
-         */
-        const addDeltas = (...values) => {
-            if(!values.length) {
-                return 0
-            }
-            let vL = combinedDeltas[combinedDeltas.length - 1]
-            let added = 0
-            if(!vL) {
-                vL = values[0]
-                values.shift()
-                combinedDeltas.push(vL)
-                added++
-            }
-            for(const v of values) {
-                if(v.y == vL.y) {
-                    vL.dF += v.dF
-                } else {
-                    combinedDeltas.push(v)
-                    added++
-                    vL = v
-                }
-            }
-            return added
-        }
-
-        if(zeroWidthPoints.length) {
-            /**
-             *
-             * @param {{y: number, dF: number}[]} values
-             */
-            const combineSpans = (values) => {
-                const v0 = values.shift()
-                if(!v0) {
-                    return null
-                }
-                const out = {...v0}
-                while(values.length && values[0].y == v0.y) {
-                    out.dF += values[0].dF
-                    values.shift()
-                }
-                return out
-            }
-            /**
-             *
-             * @param {{y: number, zeroSpan: number}[]} values
-             */
-            const combineZeroes = (values) => {
-                const v0 = values.shift()
-                if(!v0) {
-                    return null
-                }
-                const out = {...v0}
-                while(values.length && values[0].y == v0.y) {
-                    out.zeroSpan += values[0].zeroSpan
-                    values.shift()
-                }
-                return out
-            }
-            /**
-             *
-             * @param {{y: number, zeroSpan: number}} zeroPoint
-             * @param {number} lowY
-             * @param {number} highY
-             */
-            const zeroPointsAt = (zeroPoint, lowY, highY) => {
-                return [
-                    {y: (lowY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (highY - lowY)},
-                    {y: (highY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (highY - lowY)},
-                ]
-            }
-
-            let nextZeroPoint = combineZeroes(zeroWidthPoints)
-            let nextSpanPoint = combineSpans(deltas)
-            /**
-             * @type {number | undefined}
-             */
-            let lastY
-            while(nextSpanPoint && nextZeroPoint) {
-                if(nextSpanPoint.y < nextZeroPoint.y) {
-                    // If the span points are early, we can just push them.
-                    if(lastY === undefined || lastY != nextSpanPoint.y) {
-                        lastY = nextSpanPoint.y
-                    }
-                    addDeltas(nextSpanPoint)
-                    nextSpanPoint = combineSpans(deltas)
-                    continue
-                }
-                // The current span point(s) are either EQUAL or GREATER.
-                /**
-                 * @type {number[]}
-                 */
-                const possibleNextY = []
-                if(nextSpanPoint.y > nextZeroPoint.y) {
-                    possibleNextY.push(nextSpanPoint.y)
-                } else if(deltas.length) {
-                    possibleNextY.push(deltas[0].y)
-                }
-                if(zeroWidthPoints.length) {
-                    possibleNextY.push(zeroWidthPoints[0].y)
-                }
-                if(possibleNextY.length) {
-                    const nextY = Math.min(...possibleNextY)
-                    if(lastY === undefined) {
-                        // Estimate
-                        lastY = nextZeroPoint.y - (nextY - nextSpanPoint.y)
-                    }
-                    const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lastY, nextY)
-                    // Now we have the answer we can push the "before" value
-                    addDeltas(lowZeroPoint)
-                    // Then the equal value, if applicable.
-                    if(nextSpanPoint.y == nextZeroPoint.y) {
-                        addDeltas(nextSpanPoint)
-                        nextSpanPoint = combineSpans(deltas)
-                    }
-                    // Then the "after" value.
-                    addDeltas(highZeroPoint)
-                    lastY = nextZeroPoint.y
-                    nextZeroPoint = combineZeroes(zeroWidthPoints)
-                } else if(lastY === undefined) {
-                    // This would happen if if there were exactly one point,
-                    // which was a zero point.
-
-                    // This is actually handled below.
-                    break
-                } else {
-                    // There are no next Y values. This happens if:
-                    // The current span is EQUAL and
-                    // There are no points after this.
-
-                    const nextY = nextZeroPoint.y + (nextZeroPoint.y - lastY)
-
-                    const [lowZeroPoint, highZeroPoint] = zeroPointsAt(nextZeroPoint, lastY, nextY)
-
-                    // Now we have the answer we can push the "before" value
-                    addDeltas(lowZeroPoint)
-                    // Then the equal value
-                    addDeltas(nextSpanPoint)
-                    nextSpanPoint = combineSpans(deltas)
-                    // But we actually put the "after" value exactly on the point.
-                    addDeltas(highZeroPoint)
-                    nextZeroPoint = combineZeroes(zeroWidthPoints)
-                }
-            }
-
-            // If there are non-zeroes left, just push them.
-            if(nextSpanPoint) {
-                addDeltas(nextSpanPoint)
-            }
-            addDeltas(...deltas)
-
-            // If there are zeroes left, follow a tighter loop.
-            if(nextZeroPoint) {
-                while(zeroWidthPoints.length) {
-                    // The few towards the end
-                    const nextY = zeroWidthPoints[0].y
-                    if(lastY === undefined) {
-                        // Estimate
-                        lastY = nextZeroPoint.y - (nextY - nextZeroPoint.y)
-                    }
-                    addDeltas(...zeroPointsAt(nextZeroPoint, lastY, nextY))
-                    lastY = nextZeroPoint.y
-                    nextZeroPoint = combineZeroes(zeroWidthPoints)
-                    if(!nextZeroPoint) {
-                        throw new Error("Internal error")
-                    }
-                }
-                if(lastY === undefined) {
-                    // There is exactly one point, and it's a zero.
-                    const lastY = nextZeroPoint.y - zeroDeltaSpan
-                    const nextY = nextZeroPoint.y + zeroDeltaSpan
-                    addDeltas(...zeroPointsAt(nextZeroPoint, lastY, nextY))
-                } else {
-                    // Very last zero point. Here, we'll have lastY only.
-                    const nextY = nextZeroPoint.y + (nextZeroPoint.y - lastY)
-                    addDeltas(...zeroPointsAt(nextZeroPoint, lastY, nextY))
-                }
-            }
-        } else {
-            addDeltas(...deltas)
-        }
-
-        return {combinedDeltas, zeroDeltaSpan}
+        return new HistogramDeltas(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints).combined
     }
 
     /**
