@@ -107,7 +107,8 @@ class Scaler {
      */
     displayFrequency(f) {
         if(this.#field.expectsExponentialFrequency) {
-            return -Math.log(f)
+            // 0 may legitimately appear in the middle of exponential frequency sets
+            return -Math.log(f + 0.001)
         } else {
             return -f
         }
