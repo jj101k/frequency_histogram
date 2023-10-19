@@ -364,8 +364,17 @@ class Histogram {
          * @type {{y: number, zeroSpan: number}[]}
          */
         const zeroWidthPoints = []
-        let lastY = dataPoints[0].y ?? 0
-        let lastX = dataPoints[0].x
+        const dataPoint0 = dataPoints[0]
+
+        // The first point gets injected as if there were an identical point
+        // before it (using the _next_ to guess the distance)
+        if(dataPoint0.y !== null && dataPoint0.y !== undefined) {
+            const dX = dataPoints[1].x - dataPoint0.x // Presumed
+            zeroWidthPoints.push({y: dataPoint0.y, zeroSpan: dX})
+        }
+
+        let lastY = dataPoint0.y ?? 0
+        let lastX = dataPoint0.x
 
         for(let i = 1; i < dataPoints.length; i++) {
             const dataPoint = dataPoints[i]
