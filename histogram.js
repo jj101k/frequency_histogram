@@ -84,7 +84,7 @@ class Histogram {
             return added
         }
 
-        if(deltas.length && zeroWidthPoints.length) {
+        if(zeroWidthPoints.length) {
             /**
              *
              * @param {{y: number, dF: number}[]} values
