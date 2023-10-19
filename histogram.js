@@ -178,11 +178,11 @@ class Histogram {
                     lastY = nextZeroPoint.y
                     nextZeroPoint = combineZeroes(zeroWidthPoints)
                 } else if(lastY === undefined) {
-                    // This would happen in principle if there was exactly one
-                    // point, which was a zero point.
-                    //
-                    // But that's caught above.
-                    throw new Error("Internal state error")
+                    // This would happen if if there were exactly one point,
+                    // which was a zero point.
+
+                    // This is actually handled below.
+                    break
                 } else {
                     // There are no next Y values. This happens if:
                     // The current span is EQUAL and
