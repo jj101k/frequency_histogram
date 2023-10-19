@@ -312,6 +312,11 @@ class Histogram {
         const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit)
 
         let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
+        // Special case: exactly one point
+        if(dataPoints.length == 1) {
+            return {deltas: [], zeroDeltaSpan: this.#fieldInfo.expectedMinResolution ?? 1,
+                zeroWidthPoints: [{y: dataPoints[0].y, zeroSpan: 1}]}
+        }
         if(expectedMinDeltaY === undefined) {
             /**
              * @type {Set<number>}
