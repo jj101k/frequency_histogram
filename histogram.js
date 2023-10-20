@@ -104,12 +104,9 @@ class HistogramDeltas {
             // This is an estimate!
             nextY = zeroPoint.y + this.#zeroDeltaSpan
         }
-        if(this.#lastY === undefined) {
-            // Estimate
-            this.#lastY = zeroPoint.y - (nextY - zeroPoint.y)
-        }
         const nextLastY = zeroPoint.y
-        const lastY = this.#lastY
+        // Estimate if needed
+        const lastY = this.#lastY ?? (zeroPoint.y - (nextY - zeroPoint.y))
         const [lowZeroPoint, highZeroPoint] = [
             {y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY)},
             {y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY)},
