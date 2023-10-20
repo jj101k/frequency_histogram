@@ -215,12 +215,10 @@ class HistogramDeltas {
         }
 
         // If there are non-zeroes left, just push them.
-        if(this.#nextSpanPoint) {
-            this.#addDeltas(this.#nextSpanPoint)
-            this.#nextSpanPoint = null
-        }
-        this.#addDeltas(...this.#spanPoints)
+        const spanPoints = this.#spanPoints
         this.#spanPoints = []
+        this.#addNextSpanPoint()
+        this.#addDeltas(...spanPoints)
 
         // If there are zeroes left, follow a tighter loop.
         while(this.#nextZeroPoint) {
