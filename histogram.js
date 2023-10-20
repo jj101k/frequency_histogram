@@ -204,13 +204,12 @@ class HistogramDeltas {
         // stacked up, because a point will be deployed _before_ them.
 
         while(this.#nextSpanPoint && this.#nextZeroPoint) {
-            if(this.#nextSpanPoint.y < this.#nextZeroPoint.y) {
+            while(this.#nextSpanPoint && this.#nextSpanPoint.y < this.#nextZeroPoint.y) {
                 // If the span points are early, we can just push them.
                 if(this.#lastY === undefined || this.#lastY != this.#nextSpanPoint.y) {
                     this.#lastY = this.#nextSpanPoint.y
                 }
                 this.#addNextSpanPoint()
-                continue
             }
             this.#addZeroPointFull()
         }
