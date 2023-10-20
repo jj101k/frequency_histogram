@@ -173,6 +173,8 @@ class HistogramDeltas {
         this.#spanPoints = deltas
         this.#zeroDeltaSpan = zeroDeltaSpan
         this.#zeroWidthPoints = zeroWidthPoints
+        this.#getNextZeroPoint()
+        this.#getNextSpanPoint()
     }
 
     /**
@@ -190,8 +192,6 @@ class HistogramDeltas {
         // Any non-zero points which happen to be at the same stop have to be
         // stacked up, because a point will be deployed _before_ them.
 
-        this.#getNextZeroPoint()
-        this.#getNextSpanPoint()
         while(this.#nextSpanPoint && this.#nextZeroPoint) {
             if(this.#nextSpanPoint.y < this.#nextZeroPoint.y) {
                 // If the span points are early, we can just push them.
