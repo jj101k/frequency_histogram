@@ -157,9 +157,11 @@ class Scaler {
 
         const renderSquare = values.length < Scaler.renderSquareLimit
 
+        // Last point is handled specially.
+        const tail = values.pop()
 
+        let lastPos = firstPos
         if (renderSquare) {
-            let lastPos = firstPos
             for (const d of values) {
                 const v = this.displayFrequency(d.f) * rescale
                 pathRenderer.line({x: this.displayValue(d.y, logOffset), y: lastPos.y})
@@ -170,7 +172,13 @@ class Scaler {
             for (const d of values) {
                 const v = this.displayFrequency(d.f) * rescale
                 pathRenderer.line({x: this.displayValue(d.y, logOffset), y: v})
+                lastPos = {x: this.displayValue(d.y, logOffset), y: v}
             }
+        }
+
+        // Always a horizontal line to the last point, for symmetry with the first
+        if(tail) {
+            pathRenderer.line({x: this.displayValue(tail.y, logOffset), y: lastPos.y})
         }
 
         const box = pathRenderer.box
