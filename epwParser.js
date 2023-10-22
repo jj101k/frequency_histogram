@@ -69,7 +69,7 @@ class EpwParser {
         const rows = limit === undefined ? this.rows : this.rows.slice(0, limit)
         const r = rows.map(
             (r, i) => ({x: i, y: r.get(field)})
-        ) // .slice(0, 96)
+        )
 
         const sampleSize = 24
         const loggableRunLength = 4
