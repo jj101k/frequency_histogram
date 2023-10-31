@@ -460,10 +460,11 @@ class Histogram {
 
     /**
      *
+     * @param {EpwNamedNumberField} field
      * @returns
      */
-    getFrequencies() {
-        const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit)
+    getFrequencies(field = this.#fieldInfo.field) {
+        const dataPoints = this.#parser.getValues(field, this.#limit)
 
         /**
          * @type {Record<number, number>}
@@ -479,6 +480,28 @@ class Histogram {
             frequencies[dataPoint.y]++
         }
         return Object.entries(frequencies).map(([y, f]) => ({y: +y, f})).sort((a, b) => a.y - b.y)
+    }
+
+    /**
+     *
+     * @param {(EpwNamedField<string> | EpwNamedField<number | null>)[]} fields
+     * @returns
+     */
+    getUniqueValues(fields) {
+        const dataPoints = this.#parser.getValueMulti(fields)
+
+        /**
+         * @type {Map<number | string, (number | string | null | undefined)[]>}
+         */
+        const unique = new Map()
+        const stringify = (fields.length == 1) ? vs => vs[0] : vs => JSON.stringify(vs)
+        for(const dataPoint of dataPoints) {
+            const s = stringify(dataPoint)
+            if(!unique.has(s)) {
+                unique.set(s, dataPoint)
+            }
+        }
+        return [...unique.values()]
     }
 
     /**

@@ -14,14 +14,16 @@ function main() {
     if(!e) {
         throw new Error("Cannot find import container")
     }
-    new EpwImporter(e, hr).init()
+    const importer = new EpwImporter(e, hr)
 
     const retainedData = {
-        /**
-         * @type {EpwNamedNumberField[]}
-         */
-        get fieldOptions() {
-            return EpwFields.filter(field => field instanceof EpwNamedNumberField)
+        _period: null,
+        get period() {
+            return this._period
+        },
+        set period(v) {
+            this._period = v
+            console.log(v)
         },
         get units() {
             return this.field.units
@@ -30,7 +32,49 @@ function main() {
     Frameworker.proxy(retainedData, hr, ["plain", "debug", "field", "preferLog", "first24"],
         {}, [])
 
-    const f = new Frameworker(retainedData)
+    const f = new Frameworker(retainedData, document, {
+        field: {
+            /**
+             * @type {EpwNamedNumberField[]}
+             */
+            get options() {
+                return EpwFields.filter(field => field instanceof EpwNamedNumberField)
+            }
+        },
+        period: {
+            get options() {
+                const defaultPeriodOptions = [
+                    {
+                        name: "All",
+                        year: null,
+                        month: null,
+                    },
+                ]
+                if(!hr.histogram) {
+                    return defaultPeriodOptions
+                }
+                const yearField = EpwFields.find(field => field.name == "Year")
+                const monthField = EpwFields.find(field => field.name == "Month")
+                if(!yearField || !monthField) {
+                    throw new Error("Could not find year/month fields")
+                }
+                return [
+                    ...defaultPeriodOptions,
+                    ...hr.histogram.getUniqueValues([yearField, monthField]).map(([y, m]) => ({
+                        name: `${y}-${("" + m).padStart(2, "0")}`,
+                        year: y,
+                        month: m,
+                    }))
+                ]
+            }
+        }
+
+    })
+    importer.addEventListener("import", () => {
+        const e = new Event("update-options:period")
+        f.dispatchEvent(e)
+    })
+    importer.init()
     f.addEventListener("beforeinit", () => {
         retainedData.field = EpwFields.find(f => f.name == "Dry Bulb Temperature")
     })

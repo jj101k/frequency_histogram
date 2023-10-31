@@ -8,6 +8,10 @@ class EpwImporter {
      */
     #e
     /**
+     * @type {{[event_name: string]: (() => any)[]}}
+     */
+    #eventListeners = {}
+    /**
      *
      */
     #fr
@@ -30,8 +34,32 @@ class EpwImporter {
             const h = new Histogram(p)
             this.#hr.histogram = h
 
+            this.dispatchEvent(new Event("import"))
+
             this.#hr.render()
         })
+    }
+
+    /**
+     *
+     * @param {"import"} event_name
+     * @param {() => any} handler
+     */
+    addEventListener(event_name, handler) {
+        this.#eventListeners[event_name] = this.#eventListeners[event_name] || []
+        this.#eventListeners[event_name].push(handler)
+    }
+
+    /**
+     *
+     * @param {Event} event
+     */
+    dispatchEvent(event) {
+        if(this.#eventListeners[event.type]) {
+            for(const l of this.#eventListeners[event.type]) {
+                l()
+            }
+        }
     }
 
     /**
@@ -43,5 +71,18 @@ class EpwImporter {
                 this.#fr.readAsText(this.#e.files[0])
             }
         })
+    }
+
+    /**
+     *
+     * @param {"import"} event_name
+     * @param {() => any} handler
+     */
+    removeEventListener(event_name, handler) {
+        if(this.#eventListeners[event_name]) {
+            this.#eventListeners[event_name] = this.#eventListeners[event_name].filter(
+                v => v != handler
+            )
+        }
     }
 }

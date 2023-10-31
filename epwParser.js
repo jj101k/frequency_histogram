@@ -62,8 +62,9 @@ class EpwParser {
 
     /**
      *
-     * @param {EpwNamedField<number | null>} field
-     * @param {number | undefined} limit
+     * @template {number} T
+     * @param {EpwNamedField<T | null>} field
+     * @param {T | undefined} limit
      */
     getValues(field, limit = undefined) {
         const rows = limit === undefined ? this.rows : this.rows.slice(0, limit)
@@ -110,5 +111,16 @@ class EpwParser {
             console.log("Raw values", r)
         }
         return r
+    }
+
+
+    /**
+     *
+     * @param {EpwNamedField<string | number | null>[]} fields
+     * @param {number | undefined} limit
+     */
+    getValueMulti(fields, limit = undefined) {
+        const rows = limit === undefined ? this.rows : this.rows.slice(0, limit)
+        return rows.map((r) => fields.map(f => r.get(f)))
     }
 }
