@@ -242,6 +242,11 @@ class Histogram {
     #fieldInfo
 
     /**
+     * @type {((value: EpwRow) => boolean) | undefined}
+     */
+    #filter
+
+    /**
      * @type {{y: number, f: number}[] | undefined}
      */
     #frequencies
@@ -316,6 +321,18 @@ class Histogram {
     /**
      *
      */
+    get filter() {
+        return this.#filter
+    }
+    set filter(v) {
+        this.#filter = v
+        this.#deltaInfo = undefined
+        this.#frequencies = undefined
+    }
+
+    /**
+     *
+     */
     get limit() {
         return this.#limit
     }
@@ -330,7 +347,7 @@ class Histogram {
      * @returns
      */
     getDeltas() {
-        const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit)
+        const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit, this.#filter)
 
         let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
         // Special case: exactly one point

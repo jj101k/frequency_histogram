@@ -29,6 +29,11 @@ class HistogramRender {
     #field
 
     /**
+     * @type {{year: number, month: number} | undefined}
+     */
+    #period
+
+    /**
      *
      */
     #first24 = false
@@ -86,6 +91,17 @@ class HistogramRender {
     }
     set first24(v) {
         this.#first24 = v
+        this.render()
+    }
+
+    /**
+     *
+     */
+    get period() {
+        return this.#period
+    }
+    set period(v) {
+        this.#period = v
         this.render()
     }
 
@@ -155,6 +171,8 @@ class HistogramRender {
         }
         this.histogram.fieldInfo = {field: this.#field}
         this.histogram.limit = this.#first24 ? 24 : undefined
+        const period = this.#period
+        this.histogram.filter = period ? (row) => (row.get(EpwFields[0]) == period.year && row.get(EpwFields[1]) == period.month) : undefined
         return this.histogram
     }
 

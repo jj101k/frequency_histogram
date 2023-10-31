@@ -65,9 +65,32 @@ class EpwParser {
      * @template {number} T
      * @param {EpwNamedField<T | null>} field
      * @param {T | undefined} limit
+     * @param {((value: EpwRow) => boolean) | undefined} filter
      */
-    getValues(field, limit = undefined) {
-        const rows = limit === undefined ? this.rows : this.rows.slice(0, limit)
+    getValues(field, limit = undefined, filter = undefined) {
+        /**
+         * @type {EpwRow[]}
+         */
+        let rows
+        if(limit == undefined && filter === undefined) {
+            rows = this.rows
+        } else if(limit === undefined) {
+            rows = this.rows.filter(filter)
+        } else if(filter === undefined) {
+            rows = this.rows.slice(0, limit)
+        } else {
+            rows = []
+            let added = 0
+            for(const row of rows) {
+                if(filter(row)) {
+                    rows.push(row)
+                    added++
+                    if(added >= limit) {
+                        break
+                    }
+                }
+            }
+        }
         const r = rows.map(
             (r, i) => ({x: i, y: r.get(field)})
         )

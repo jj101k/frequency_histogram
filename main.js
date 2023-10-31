@@ -17,19 +17,11 @@ function main() {
     const importer = new EpwImporter(e, hr)
 
     const retainedData = {
-        _period: null,
-        get period() {
-            return this._period
-        },
-        set period(v) {
-            this._period = v
-            console.log(v)
-        },
         get units() {
             return this.field.units
         },
     }
-    Frameworker.proxy(retainedData, hr, ["plain", "debug", "field", "preferLog", "first24"],
+    Frameworker.proxy(retainedData, hr, ["period", "plain", "debug", "field", "preferLog", "first24"],
         {}, [])
 
     const f = new Frameworker(retainedData, document, {
