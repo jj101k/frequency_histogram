@@ -99,7 +99,7 @@ class EpwParser {
         const loggableRunLength = 4
         const maxLoggableRuns = 50
         let runs = 0
-        let last = r[0].y
+        let last = r[0]?.y
         for(const ri of r.slice(1, sampleSize)) {
             if(ri.y != last) {
                 runs++
@@ -113,7 +113,7 @@ class EpwParser {
             /**
              * @type {number | null | undefined}
              */
-            let l = r[0].y
+            let l = r[0]?.y
             let c = 0
             for(const ri of r) {
                 if(ri.y !== l) {
