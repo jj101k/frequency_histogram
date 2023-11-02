@@ -72,21 +72,25 @@ class EpwParser {
          * @type {EpwRow[]}
          */
         let rows
-        if(limit == undefined && filter === undefined) {
-            rows = this.rows
-        } else if(limit === undefined) {
-            rows = this.rows.filter(filter)
-        } else if(filter === undefined) {
-            rows = this.rows.slice(0, limit)
+        if(limit === undefined) {
+            if(filter === undefined) {
+                rows = this.rows
+            } else {
+                rows = this.rows.filter(filter)
+            }
         } else {
-            rows = []
-            let added = 0
-            for(const row of rows) {
-                if(filter(row)) {
-                    rows.push(row)
-                    added++
-                    if(added >= limit) {
-                        break
+            if(filter === undefined) {
+                rows = this.rows.slice(0, limit)
+            } else {
+                rows = []
+                let added = 0
+                for(const row of this.rows) {
+                    if(filter(row)) {
+                        rows.push(row)
+                        added++
+                        if(added >= limit) {
+                            break
+                        }
                     }
                 }
             }
