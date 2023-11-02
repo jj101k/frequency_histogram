@@ -172,7 +172,7 @@ class HistogramRender {
         this.histogram.fieldInfo = {field: this.#field}
         this.histogram.limit = this.#first24 ? 24 : undefined
         const period = this.#period
-        this.histogram.filter = period ? (row) => (row.get(EpwFields[0]) == period.year && row.get(EpwFields[1]) == period.month) : undefined
+        this.histogram.filter = period?.year ? (row) => (row.get(EpwFields[0]) == period.year && row.get(EpwFields[1]) == period.month) : undefined
         return this.histogram
     }
 
