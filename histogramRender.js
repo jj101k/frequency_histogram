@@ -3,6 +3,15 @@
 /**
  *
  */
+const GraphType = {
+    Histogram: 1,
+    PlainHistogram: 0,
+    Raw: -1,
+}
+
+/**
+ *
+ */
 class HistogramRender {
     /**
      *
@@ -12,11 +21,6 @@ class HistogramRender {
      * @type {SVGPathElement | undefined}
      */
     #path
-
-    /**
-     *
-     */
-    #plain = false
 
     /**
      * @type {SVGSVGElement | undefined}
@@ -37,6 +41,11 @@ class HistogramRender {
      *
      */
     #first24 = false
+
+    /**
+     * @type {{value: number}}
+     */
+    #graphType = {value: GraphType.Histogram}
 
     /**
      * @type {boolean | undefined}
@@ -97,22 +106,22 @@ class HistogramRender {
     /**
      *
      */
-    get period() {
-        return this.#period
+    get graphType() {
+        return this.#graphType
     }
-    set period(v) {
-        this.#period = v
+    set graphType(v) {
+        this.#graphType = v
         this.render()
     }
 
     /**
      *
      */
-    get plain() {
-        return this.#plain
+    get period() {
+        return this.#period
     }
-    set plain(v) {
-        this.#plain = v
+    set period(v) {
+        this.#period = v
         this.render()
     }
 
@@ -158,10 +167,13 @@ class HistogramRender {
      * @returns
      */
     render() {
-        if(this.plain) {
-            return this.renderPlain()
-        } else {
-            return this.renderDelta()
+        switch(this.#graphType.value) {
+            case GraphType.Raw:
+                return this.renderRaw()
+            case GraphType.PlainHistogram:
+                return this.renderPlain()
+            case GraphType.Histogram:
+                return this.renderDelta()
         }
     }
 
@@ -193,7 +205,7 @@ class HistogramRender {
             console.log("Deltas", cumulativeDeltas)
         }
 
-        const scaler = new Scaler(this.#field, this.#preferLog)
+        const scaler = new HistogramScaler(this.#field, this.#preferLog)
 
         const {dA, box, strokeWidth} = scaler.renderValues(cumulativeDeltas)
 
@@ -226,9 +238,42 @@ class HistogramRender {
             console.log(frequencies)
         }
 
-        const scaler = new Scaler(this.#field)
+        const scaler = new HistogramScaler(this.#field)
 
         const {dA, box, strokeWidth} = scaler.renderValues(frequencies)
+
+        if(this.debug) {
+            console.log(box)
+        }
+        this.#svg.setAttribute("viewBox", box)
+
+        this.#path.setAttribute("d", dA)
+        if(this.debug) {
+            console.log(strokeWidth)
+        }
+        this.#path.setAttribute("stroke-width", strokeWidth)
+    }
+
+    /**
+     *
+     */
+    renderRaw() {
+        const histogram = this.#prepareHistogram()
+        if(!histogram) {
+            return
+        }
+        if(!this.#svg || !this.#path) {
+            [this.#path, this.#svg] = this.#init()
+        }
+        const rawValues = histogram.rawValues
+
+        if(this.debug) {
+            console.log(rawValues)
+        }
+
+        const scaler = new RawScaler(this.#field)
+
+        const {dA, box, strokeWidth} = scaler.renderValues(rawValues)
 
         if(this.debug) {
             console.log(box)

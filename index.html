@@ -33,6 +33,12 @@
                 background: black;
                 color: white;
             }
+            label.quick-click {
+                border: 1px solid black;
+                padding: 0.5em;
+                margin-right: 0.5em;
+                display: inline-block;
+            }
         </style>
     </head>
     <body>
@@ -56,16 +62,19 @@
                     </fieldset>
                 </div>
                 <p>
-                    Logging
-                    <input type="checkbox" data-readwrite="debug"/>
+                    Graph type
+                    <fieldset style="width: 100%" data-readwrite="graphType">
+                    </fieldset>
                 </p>
                 <p>
-                    Plain histogram
-                    <input type="checkbox" data-readwrite="plain"/>
-                </p>
-                <p>
-                    First 24 points only
-                    <input type="checkbox" data-readwrite="first24"/>
+                    <label class="quick-click">
+                        <input type="checkbox" data-readwrite="debug"/>
+                        Logging
+                    </label>
+                    <label class="quick-click">
+                        <input type="checkbox" data-readwrite="first24"/>
+                        First 24 points only
+                    </label>
                 </p>
                 <p>
                     Value (x) scaling

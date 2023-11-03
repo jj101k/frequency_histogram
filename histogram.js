@@ -262,6 +262,11 @@ class Histogram {
     #parser
 
     /**
+     *
+     */
+    #raw = false
+
+    /**
      * This provides the deltas with all values with the same y value combined.
      */
     get combined() {
@@ -340,6 +345,13 @@ class Histogram {
         this.#limit = v
         this.#deltaInfo = undefined
         this.#frequencies = undefined
+    }
+
+    /**
+     *
+     */
+    get rawValues() {
+        return this.#parser.getValues(this.#fieldInfo.field, this.#limit, this.#filter)
     }
 
     /**

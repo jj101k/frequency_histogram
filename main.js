@@ -21,7 +21,7 @@ function main() {
             return this.field.units
         },
     }
-    Frameworker.proxy(retainedData, hr, ["period", "plain", "debug", "field", "preferLog", "first24"],
+    Frameworker.proxy(retainedData, hr, ["period", "debug", "field", "preferLog", "first24", "graphType"],
         {}, [])
 
     const f = new Frameworker(retainedData, document, {
@@ -31,6 +31,15 @@ function main() {
              */
             get options() {
                 return EpwFields.filter(field => field instanceof EpwNamedNumberField)
+            }
+        },
+        graphType: {
+            get options() {
+                return [
+                    {name: "Interpolated Histogram", value: 1},
+                    {name: "Histogram", value: 0},
+                    {name: "Raw", value: -1},
+                ]
             }
         },
         period: {

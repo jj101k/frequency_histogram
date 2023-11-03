@@ -70,7 +70,7 @@ class SvgPathRenderer {
 }
 
 /**
- *
+ * @template F
  */
 class Scaler {
     /**
@@ -81,9 +81,113 @@ class Scaler {
     static renderSquareLimit = 50
 
     /**
+     * @protected
+     * @abstract
+     *
+     * @param {F} d
+     * @returns {number}
+     */
+    displayX(d) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @protected
+     * @abstract
+     *
+     * @param {F} d
+     * @returns {number}
+     */
+    displayY(d) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @protected
+     *
+     * @param {F[]} values
+     */
+    prepare(values) {
+    }
+
+    /**
+     *
+     * @param {F[]} values
+     */
+    renderValues(values) {
+        let trueMinF = this.displayY(values[0])
+        let trueMaxF = this.displayY(values[0])
+        for (const d of values) {
+            const v = this.displayY(d)
+            if (v > trueMaxF) {
+                trueMaxF = v
+            }
+            if (v < trueMinF) {
+                trueMinF = v
+            }
+        }
+
+        this.prepare(values)
+
+        const minX = this.displayX(values[0])
+        const maxX = this.displayX(values[values.length - 1])
+
+        const rescale = (maxX - minX) / ((trueMaxF - trueMinF) * 4)
+
+        const firstPos = { x: this.displayX(values[0]), y: this.displayY(values[0]) * rescale }
+        const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
+
+        const renderSquare = values.length < Scaler.renderSquareLimit
+
+        // Last point is handled specially.
+        const tail = values.pop()
+
+        let lastPos = firstPos
+        if (renderSquare) {
+            for (const d of values) {
+                const v = this.displayY(d) * rescale
+                pathRenderer.line({x: this.displayX(d), y: lastPos.y})
+                pathRenderer.line({x: this.displayX(d), y: v})
+                lastPos = { x: this.displayX(d), y: v }
+            }
+        } else {
+            for (const d of values) {
+                const v = this.displayY(d) * rescale
+                pathRenderer.line({x: this.displayX(d), y: v})
+                lastPos = {x: this.displayX(d), y: v}
+            }
+        }
+
+        // Always a horizontal line to the last point, for symmetry with the first
+        if(tail) {
+            pathRenderer.line({x: this.displayX(tail), y: lastPos.y})
+        }
+
+        const box = pathRenderer.box
+
+        return {dA: pathRenderer.dA,
+            box: [box.x, box.y, box.w, box.h].join(" "),
+            strokeWidth: `${(maxX - minX) / 800}`}
+    }
+}
+
+/**
+ * @typedef {{f: number, y: number}} HistogramDatum
+ */
+
+/**
+ * @extends {Scaler<HistogramDatum>}
+ */
+class HistogramScaler extends Scaler {
+    /**
      *
      */
     #field
+
+    /**
+     *
+     */
+    #logOffset = 0
 
     /**
      *
@@ -96,95 +200,76 @@ class Scaler {
      * @param {boolean | undefined} preferLog
      */
     constructor(field, preferLog) {
+        super()
         this.#field = field
         this.#preferLog = preferLog
     }
 
     /**
+     * @protected
      *
-     * @param {number} f
+     * @param {HistogramDatum} d
      * @returns
      */
-    displayFrequency(f) {
+    displayX(d) {
+        if(this.#preferLog ?? this.#field.exponentialValues) {
+            return Math.log(d.y + this.#logOffset)
+        } else {
+            return d.y
+        }
+    }
+
+    /**
+     * @protected
+     *
+     * @param {HistogramDatum} d
+     * @returns
+     */
+    displayY(d) {
         if(this.#field.expectsExponentialFrequency) {
             // 0 may legitimately appear in the middle of exponential frequency sets
-            return -Math.log(f + 0.001)
+            return -Math.log(d.f + 0.001)
         } else {
-            return -f
+            return -d.f
         }
     }
 
     /**
+     * @protected
      *
-     * @param {number} v
-     * @param {number} logOffset
+     * @param {HistogramDatum[]} values
+     */
+    prepare(values) {
+        this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
+    }
+}
+
+
+/**
+ * @typedef {{x: number, y: number}} RawDatum
+ */
+
+/**
+ * @extends {Scaler<RawDatum>}
+ */
+class RawScaler extends Scaler {
+    /**
+     * @protected
+     *
+     * @param {RawDatum} d
      * @returns
      */
-    displayValue(v, logOffset) {
-        if(this.#preferLog ?? this.#field.exponentialValues) {
-            return Math.log(v + logOffset)
-        } else {
-            return v
-        }
+    displayX(d) {
+        return d.x
     }
 
     /**
+     * @protected
      *
-     * @param {{y: number, f: number}[]} values
+     * @param {RawDatum} d
+     * @returns
      */
-    renderValues(values) {
-
-        let trueMinF = this.displayFrequency(values[0].f)
-        let trueMaxF = this.displayFrequency(values[0].f)
-        for (const d of values) {
-            const v = this.displayFrequency(d.f)
-            if (v > trueMaxF) {
-                trueMaxF = v
-            }
-            if (v < trueMinF) {
-                trueMinF = v
-            }
-        }
-
-        const logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
-        const minX = this.displayValue(values[0].y, logOffset)
-        const maxX = this.displayValue(values[values.length - 1].y, logOffset)
-
-        const rescale = (maxX - minX) / ((trueMaxF - trueMinF) * 4)
-
-        const firstPos = { x: this.displayValue(values[0].y, logOffset), y: this.displayFrequency(values[0].f) * rescale }
-        const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
-
-        const renderSquare = values.length < Scaler.renderSquareLimit
-
-        // Last point is handled specially.
-        const tail = values.pop()
-
-        let lastPos = firstPos
-        if (renderSquare) {
-            for (const d of values) {
-                const v = this.displayFrequency(d.f) * rescale
-                pathRenderer.line({x: this.displayValue(d.y, logOffset), y: lastPos.y})
-                pathRenderer.line({x: this.displayValue(d.y, logOffset), y: v})
-                lastPos = { x: this.displayValue(d.y, logOffset), y: v }
-            }
-        } else {
-            for (const d of values) {
-                const v = this.displayFrequency(d.f) * rescale
-                pathRenderer.line({x: this.displayValue(d.y, logOffset), y: v})
-                lastPos = {x: this.displayValue(d.y, logOffset), y: v}
-            }
-        }
-
-        // Always a horizontal line to the last point, for symmetry with the first
-        if(tail) {
-            pathRenderer.line({x: this.displayValue(tail.y, logOffset), y: lastPos.y})
-        }
-
-        const box = pathRenderer.box
-
-        return {dA: pathRenderer.dA,
-            box: [box.x, box.y, box.w, box.h].join(" "),
-            strokeWidth: `${(maxX - minX) / 800}`}
+    displayY(d) {
+        return d.y
     }
 }
