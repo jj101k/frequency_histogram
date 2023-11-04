@@ -39,6 +39,7 @@ function main() {
                     {name: "Interpolated Histogram", value: 1},
                     {name: "Histogram", value: 0},
                     {name: "Raw", value: -1},
+                    {name: "Raw (Day overlap)", value: -2},
                 ]
             }
         },

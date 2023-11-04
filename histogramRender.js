@@ -7,6 +7,7 @@ const GraphType = {
     Histogram: 1,
     PlainHistogram: 0,
     Raw: -1,
+    RawDayOverlap: -2,
 }
 
 /**
@@ -177,6 +178,8 @@ class HistogramRender {
      */
     render() {
         switch (this.#graphType.value) {
+            case GraphType.RawDayOverlap:
+                return this.renderRawOverlap()
             case GraphType.Raw:
                 return this.renderRaw()
             case GraphType.PlainHistogram:
@@ -292,6 +295,40 @@ class HistogramRender {
             path.setAttribute("d", compiledPath)
 
             path.setAttribute("stroke-width", strokeWidth)
+            svg.append(path)
+        }
+    }
+
+    /**
+     *
+     */
+    renderRawOverlap() {
+        const histogram = this.#prepareHistogram()
+        if (!histogram) {
+            return
+        }
+        const svg = this.#reinit()
+        const rawValues = histogram.rawValues
+
+        if (this.debug) {
+            console.log(rawValues)
+        }
+
+        const scaler = new RawScalerOverlap(this.#field)
+
+        const { compiledPaths, box, strokeWidth } = scaler.renderValues(rawValues)
+
+        if (this.debug) {
+            console.log(box, strokeWidth)
+        }
+        svg.setAttribute("viewBox", box)
+
+        for(const compiledPath of compiledPaths) {
+            const path = this.#addPath()
+            path.setAttribute("d", compiledPath)
+
+            path.setAttribute("stroke-width", strokeWidth)
+            path.setAttribute("stroke", "rgba(255, 0, 0, 0.3)")
             svg.append(path)
         }
     }

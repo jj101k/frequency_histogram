@@ -15,6 +15,11 @@ class SvgPathRenderer {
     #compiledPath
 
     /**
+     * @type {string[]}
+     */
+    #compiledPaths = []
+
+    /**
      *
      */
     #topLeft
@@ -59,12 +64,39 @@ class SvgPathRenderer {
 
     /**
      *
+     */
+    get compiledPaths() {
+        return [
+            ...this.#compiledPaths,
+            this.compiledPath
+        ]
+    }
+
+    /**
+     *
      * @param {{x: number, y: number}} firstPos
      */
     constructor(firstPos) {
-        this.#compiledPath = `M ${firstPos.x} ${firstPos.y}`
+        this.#compiledPath = this.#newPath(firstPos)
         this.#topLeft = {x: firstPos.x, y: firstPos.y}
         this.#bottomRight = {x: firstPos.x, y: firstPos.y}
+    }
+
+    /**
+     *
+     * @param {{x: number, y: number}} pos
+     */
+    #newPath(pos) {
+        return `M ${pos.x} ${pos.y}`
+    }
+
+    /**
+     *
+     * @param {{x: number, y: number}} pos
+     */
+    addPathFrom(pos) {
+        this.#compiledPaths.push(this.#compiledPath)
+        this.#compiledPath = this.#newPath(pos)
     }
 
     /**
@@ -159,7 +191,7 @@ class Scaler {
 
         const box = pathRenderer.box
 
-        return {compiledPaths: [pathRenderer.compiledPath],
+        return {compiledPaths: pathRenderer.compiledPaths,
             box: [box.x, box.y, box.w, box.h].join(" "),
             strokeWidth: `${(maxX - minX) / 800}`}
     }
@@ -321,5 +353,42 @@ class RawScaler extends Scaler {
      */
     displayY(d) {
         return d.y
+    }
+}
+
+/**
+ * @extends {RawScaler}
+ */
+class RawScalerOverlap extends RawScaler {
+    /**
+     * @protected
+     *
+     * @param {RawDatum} d
+     * @returns
+     */
+    displayX(d) {
+        return d.x % 24
+    }
+
+    /**
+     *
+     * @param {RawDatum[]} values
+     * @param {number} rescale
+     * @param {SvgPathRenderer} pathRenderer
+     * @param {{x: number, y: number}} firstPos
+     * @returns
+     */
+    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+        let lastPos = firstPos
+        for (const d of values) {
+            const x = this.displayX(d)
+            const y = this.displayY(d) * rescale
+            if(x < lastPos.x) {
+                pathRenderer.addPathFrom({x, y})
+            }
+            pathRenderer.line({ x, y })
+            lastPos = { x, y }
+        }
+        return lastPos
     }
 }
