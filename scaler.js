@@ -12,7 +12,7 @@ class SvgPathRenderer {
     /**
      *
      */
-    #dA
+    #compiledPath
 
     /**
      *
@@ -53,8 +53,8 @@ class SvgPathRenderer {
     /**
      *
      */
-    get dA() {
-        return this.#dA
+    get compiledPath() {
+        return this.#compiledPath
     }
 
     /**
@@ -62,7 +62,7 @@ class SvgPathRenderer {
      * @param {{x: number, y: number}} firstPos
      */
     constructor(firstPos) {
-        this.#dA = `M ${firstPos.x} ${firstPos.y}`
+        this.#compiledPath = `M ${firstPos.x} ${firstPos.y}`
         this.#topLeft = {x: firstPos.x, y: firstPos.y}
         this.#bottomRight = {x: firstPos.x, y: firstPos.y}
     }
@@ -72,7 +72,7 @@ class SvgPathRenderer {
      * @param {{x: number, y: number}} pos
      */
     line(pos) {
-        this.#dA += ` L ${pos.x} ${pos.y}`
+        this.#compiledPath += ` L ${pos.x} ${pos.y}`
         this.#fit(pos)
     }
 
@@ -81,7 +81,7 @@ class SvgPathRenderer {
      * @param {{x: number, y: number}} pos
      */
     moveTo(pos) {
-        this.#dA += ` M ${pos.x} ${pos.y}`
+        this.#compiledPath += ` M ${pos.x} ${pos.y}`
         this.#fit(pos)
     }
 }
@@ -159,7 +159,7 @@ class Scaler {
 
         const box = pathRenderer.box
 
-        return {dA: pathRenderer.dA,
+        return {compiledPath: pathRenderer.compiledPath,
             box: [box.x, box.y, box.w, box.h].join(" "),
             strokeWidth: `${(maxX - minX) / 800}`}
     }

@@ -41,7 +41,7 @@ class HistogramRender {
     /**
      * @type {{value: number}}
      */
-    #graphType = {value: GraphType.Histogram}
+    #graphType = { value: GraphType.Histogram }
 
     /**
      * @type {boolean | undefined}
@@ -66,7 +66,7 @@ class HistogramRender {
      */
     #reinit() {
         let svg = this.#svg
-        if(!svg) {
+        if (!svg) {
             const document = this.#container.ownerDocument
             svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
             svg.setAttribute("viewBox", "0 0 1000 1000")
@@ -74,7 +74,7 @@ class HistogramRender {
             this.#container.append(svg)
             this.#svg = svg
         }
-        for(const path of svg.querySelectorAll("path")) {
+        for (const path of svg.querySelectorAll("path")) {
             svg.removeChild(path)
         }
         return svg
@@ -138,16 +138,16 @@ class HistogramRender {
      *
      */
     get preferLog() {
-        if(this.#preferLog === undefined) {
+        if (this.#preferLog === undefined) {
             return "0"
-        } else if(this.#preferLog) {
+        } else if (this.#preferLog) {
             return "1"
         } else {
             return "-1"
         }
     }
     set preferLog(v) {
-        switch(v) {
+        switch (v) {
             case "1":
                 this.#preferLog = true
                 break
@@ -176,7 +176,7 @@ class HistogramRender {
      * @returns
      */
     render() {
-        switch(this.#graphType.value) {
+        switch (this.#graphType.value) {
             case GraphType.Raw:
                 return this.renderRaw()
             case GraphType.PlainHistogram:
@@ -187,10 +187,10 @@ class HistogramRender {
     }
 
     #prepareHistogram() {
-        if(!this.histogram) {
+        if (!this.histogram) {
             return undefined
         }
-        this.histogram.fieldInfo = {field: this.#field}
+        this.histogram.fieldInfo = { field: this.#field }
         this.histogram.limit = this.#first24 ? 24 : undefined
         const period = this.#period
         this.histogram.filter = period?.year ? (row) => (row.get(EpwFields[0]) == period.year && row.get(EpwFields[1]) == period.month) : undefined
@@ -202,7 +202,7 @@ class HistogramRender {
      */
     renderDelta() {
         const histogram = this.#prepareHistogram()
-        if(!histogram) {
+        if (!histogram) {
             return
         }
         const svg = this.#reinit()
@@ -214,16 +214,16 @@ class HistogramRender {
 
         const scaler = new HistogramScaler(this.#field, this.#preferLog)
 
-        const {dA, box, strokeWidth} = scaler.renderValues(cumulativeDeltas)
+        const { compiledPath, box, strokeWidth } = scaler.renderValues(cumulativeDeltas)
 
-        if(this.debug) {
+        if (this.debug) {
             console.log(box)
         }
         svg.setAttribute("viewBox", box)
 
         const path = this.#addPath()
-        path.setAttribute("d", dA)
-        if(this.debug) {
+        path.setAttribute("d", compiledPath)
+        if (this.debug) {
             console.log(strokeWidth)
         }
         path.setAttribute("stroke-width", strokeWidth)
@@ -235,28 +235,28 @@ class HistogramRender {
      */
     renderPlain() {
         const histogram = this.#prepareHistogram()
-        if(!histogram) {
+        if (!histogram) {
             return
         }
         const svg = this.#reinit()
         const frequencies = histogram.frequencies
 
-        if(this.debug) {
+        if (this.debug) {
             console.log(frequencies)
         }
 
         const scaler = new HistogramScaler(this.#field)
 
-        const {dA, box, strokeWidth} = scaler.renderValues(frequencies)
+        const { compiledPath, box, strokeWidth } = scaler.renderValues(frequencies)
 
-        if(this.debug) {
+        if (this.debug) {
             console.log(box)
         }
         svg.setAttribute("viewBox", box)
 
         const path = this.#addPath()
-        path.setAttribute("d", dA)
-        if(this.debug) {
+        path.setAttribute("d", compiledPath)
+        if (this.debug) {
             console.log(strokeWidth)
         }
         path.setAttribute("stroke-width", strokeWidth)
@@ -268,28 +268,28 @@ class HistogramRender {
      */
     renderRaw() {
         const histogram = this.#prepareHistogram()
-        if(!histogram) {
+        if (!histogram) {
             return
         }
         const svg = this.#reinit()
         const rawValues = histogram.rawValues
 
-        if(this.debug) {
+        if (this.debug) {
             console.log(rawValues)
         }
 
         const scaler = new RawScaler(this.#field)
 
-        const {dA, box, strokeWidth} = scaler.renderValues(rawValues)
+        const { compiledPath, box, strokeWidth } = scaler.renderValues(rawValues)
 
-        if(this.debug) {
+        if (this.debug) {
             console.log(box)
         }
         svg.setAttribute("viewBox", box)
 
         const path = this.#addPath()
-        path.setAttribute("d", dA)
-        if(this.debug) {
+        path.setAttribute("d", compiledPath)
+        if (this.debug) {
             console.log(strokeWidth)
         }
         path.setAttribute("stroke-width", strokeWidth)
