@@ -159,7 +159,7 @@ class Scaler {
 
         const box = pathRenderer.box
 
-        return {compiledPath: pathRenderer.compiledPath,
+        return {compiledPaths: [pathRenderer.compiledPath],
             box: [box.x, box.y, box.w, box.h].join(" "),
             strokeWidth: `${(maxX - minX) / 800}`}
     }

@@ -214,20 +214,20 @@ class HistogramRender {
 
         const scaler = new HistogramScaler(this.#field, this.#preferLog)
 
-        const { compiledPath, box, strokeWidth } = scaler.renderValues(cumulativeDeltas)
+        const { compiledPaths, box, strokeWidth } = scaler.renderValues(cumulativeDeltas)
 
         if (this.debug) {
-            console.log(box)
+            console.log(box, strokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
-        const path = this.#addPath()
-        path.setAttribute("d", compiledPath)
-        if (this.debug) {
-            console.log(strokeWidth)
+        for(const compiledPath of compiledPaths) {
+            const path = this.#addPath()
+            path.setAttribute("d", compiledPath)
+
+            path.setAttribute("stroke-width", strokeWidth)
+            svg.append(path)
         }
-        path.setAttribute("stroke-width", strokeWidth)
-        svg.append(path)
     }
 
     /**
@@ -247,20 +247,20 @@ class HistogramRender {
 
         const scaler = new HistogramScaler(this.#field)
 
-        const { compiledPath, box, strokeWidth } = scaler.renderValues(frequencies)
+        const { compiledPaths, box, strokeWidth } = scaler.renderValues(frequencies)
 
         if (this.debug) {
-            console.log(box)
+            console.log(box, strokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
-        const path = this.#addPath()
-        path.setAttribute("d", compiledPath)
-        if (this.debug) {
-            console.log(strokeWidth)
+        for(const compiledPath of compiledPaths) {
+            const path = this.#addPath()
+            path.setAttribute("d", compiledPath)
+
+            path.setAttribute("stroke-width", strokeWidth)
+            svg.append(path)
         }
-        path.setAttribute("stroke-width", strokeWidth)
-        svg.append(path)
     }
 
     /**
@@ -280,19 +280,19 @@ class HistogramRender {
 
         const scaler = new RawScaler(this.#field)
 
-        const { compiledPath, box, strokeWidth } = scaler.renderValues(rawValues)
+        const { compiledPaths, box, strokeWidth } = scaler.renderValues(rawValues)
 
         if (this.debug) {
-            console.log(box)
+            console.log(box, strokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
-        const path = this.#addPath()
-        path.setAttribute("d", compiledPath)
-        if (this.debug) {
-            console.log(strokeWidth)
+        for(const compiledPath of compiledPaths) {
+            const path = this.#addPath()
+            path.setAttribute("d", compiledPath)
+
+            path.setAttribute("stroke-width", strokeWidth)
+            svg.append(path)
         }
-        path.setAttribute("stroke-width", strokeWidth)
-        svg.append(path)
     }
 }
