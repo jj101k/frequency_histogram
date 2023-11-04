@@ -74,13 +74,6 @@ class SvgPathRenderer {
  */
 class Scaler {
     /**
-     * Below this limit, points will be rendered correctly for the data (all
-     * lines perpendicular); above, it will be rendered in a more representative
-     * way for the underlying expectations, as directly connected points.
-     */
-    static renderSquareLimit = 50
-
-    /**
      * @protected
      * @abstract
      *
@@ -137,26 +130,10 @@ class Scaler {
         const firstPos = { x: this.displayX(values[0]), y: this.displayY(values[0]) * rescale }
         const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
 
-        const renderSquare = values.length < Scaler.renderSquareLimit
-
         // Last point is handled specially.
         const tail = values.pop()
 
-        let lastPos = firstPos
-        if (renderSquare) {
-            for (const d of values) {
-                const v = this.displayY(d) * rescale
-                pathRenderer.line({x: this.displayX(d), y: lastPos.y})
-                pathRenderer.line({x: this.displayX(d), y: v})
-                lastPos = { x: this.displayX(d), y: v }
-            }
-        } else {
-            for (const d of values) {
-                const v = this.displayY(d) * rescale
-                pathRenderer.line({x: this.displayX(d), y: v})
-                lastPos = {x: this.displayX(d), y: v}
-            }
-        }
+        const lastPos = this.renderValuePoints(values, rescale, pathRenderer, firstPos)
 
         // Always a horizontal line to the last point, for symmetry with the first
         if(tail) {
@@ -169,6 +146,24 @@ class Scaler {
             box: [box.x, box.y, box.w, box.h].join(" "),
             strokeWidth: `${(maxX - minX) / 800}`}
     }
+
+    /**
+     *
+     * @param {F[]} values
+     * @param {number} rescale
+     * @param {SvgPathRenderer} pathRenderer
+     * @param {{x: number, y: number}} firstPos
+     * @returns
+     */
+    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+        let lastPos = firstPos
+        for (const d of values) {
+            const v = this.displayY(d) * rescale
+            pathRenderer.line({ x: this.displayX(d), y: v })
+            lastPos = { x: this.displayX(d), y: v }
+        }
+        return lastPos
+    }
 }
 
 /**
@@ -179,6 +174,13 @@ class Scaler {
  * @extends {Scaler<HistogramDatum>}
  */
 class HistogramScaler extends Scaler {
+    /**
+     * Below this limit, points will be rendered correctly for the data (all
+     * lines perpendicular); above, it will be rendered in a more representative
+     * way for the underlying expectations, as directly connected points.
+     */
+    static renderSquareLimit = 50
+
     /**
      *
      */
@@ -241,6 +243,34 @@ class HistogramScaler extends Scaler {
      */
     prepare(values) {
         this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
+    }
+
+    /**
+     *
+     * @param {HistogramDatum[]} values
+     * @param {number} rescale
+     * @param {SvgPathRenderer} pathRenderer
+     * @param {{x: number, y: number}} firstPos
+     * @returns
+     */
+    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+        let lastPos = firstPos
+        const renderSquare = values.length < HistogramScaler.renderSquareLimit
+        if (renderSquare) {
+            for (const d of values) {
+                const v = this.displayY(d) * rescale
+                pathRenderer.line({ x: this.displayX(d), y: lastPos.y })
+                pathRenderer.line({ x: this.displayX(d), y: v })
+                lastPos = { x: this.displayX(d), y: v }
+            }
+        } else {
+            for (const d of values) {
+                const v = this.displayY(d) * rescale
+                pathRenderer.line({ x: this.displayX(d), y: v })
+                lastPos = { x: this.displayX(d), y: v }
+            }
+        }
+        return lastPos
     }
 }
 
