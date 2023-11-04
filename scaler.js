@@ -21,6 +21,25 @@ class SvgPathRenderer {
 
     /**
      *
+     * @param {{x: number, y: number}} pos
+     */
+    #fit(pos) {
+        if(pos.x < this.#topLeft.x) {
+            this.#topLeft.x = pos.x
+        }
+        if(pos.x > this.#bottomRight.x) {
+            this.#bottomRight.x = pos.x
+        }
+        if(pos.y < this.#topLeft.y) {
+            this.#topLeft.y = pos.y
+        }
+        if(pos.y > this.#bottomRight.y) {
+            this.#bottomRight.y = pos.y
+        }
+    }
+
+    /**
+     *
      */
     get box() {
         return {
@@ -54,18 +73,16 @@ class SvgPathRenderer {
      */
     line(pos) {
         this.#dA += ` L ${pos.x} ${pos.y}`
-        if(pos.x < this.#topLeft.x) {
-            this.#topLeft.x = pos.x
-        }
-        if(pos.x > this.#bottomRight.x) {
-            this.#bottomRight.x = pos.x
-        }
-        if(pos.y < this.#topLeft.y) {
-            this.#topLeft.y = pos.y
-        }
-        if(pos.y > this.#bottomRight.y) {
-            this.#bottomRight.y = pos.y
-        }
+        this.#fit(pos)
+    }
+
+    /**
+     *
+     * @param {{x: number, y: number}} pos
+     */
+    moveTo(pos) {
+        this.#dA += ` M ${pos.x} ${pos.y}`
+        this.#fit(pos)
     }
 }
 
@@ -158,9 +175,10 @@ class Scaler {
     renderValuePoints(values, rescale, pathRenderer, firstPos) {
         let lastPos = firstPos
         for (const d of values) {
-            const v = this.displayY(d) * rescale
-            pathRenderer.line({ x: this.displayX(d), y: v })
-            lastPos = { x: this.displayX(d), y: v }
+            const y = this.displayY(d) * rescale
+            const x = this.displayX(d)
+            pathRenderer.line({ x, y })
+            lastPos = { x, y: y }
         }
         return lastPos
     }
@@ -258,16 +276,18 @@ class HistogramScaler extends Scaler {
         const renderSquare = values.length < HistogramScaler.renderSquareLimit
         if (renderSquare) {
             for (const d of values) {
-                const v = this.displayY(d) * rescale
-                pathRenderer.line({ x: this.displayX(d), y: lastPos.y })
-                pathRenderer.line({ x: this.displayX(d), y: v })
-                lastPos = { x: this.displayX(d), y: v }
+                const x = this.displayX(d)
+                const y = this.displayY(d) * rescale
+                pathRenderer.line({ x, y: lastPos.y })
+                pathRenderer.line({ x, y })
+                lastPos = { x, y }
             }
         } else {
             for (const d of values) {
-                const v = this.displayY(d) * rescale
-                pathRenderer.line({ x: this.displayX(d), y: v })
-                lastPos = { x: this.displayX(d), y: v }
+                const x = this.displayX(d)
+                const y = this.displayY(d) * rescale
+                pathRenderer.line({ x, y })
+                lastPos = { x, y }
             }
         }
         return lastPos
