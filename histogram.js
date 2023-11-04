@@ -359,7 +359,7 @@ class Histogram {
      * @returns
      */
     getDeltas() {
-        const dataPoints = this.#parser.getValues(this.#fieldInfo.field, this.#limit, this.#filter)
+        const dataPoints = this.rawValues
 
         let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
         // Special case: exactly one point
@@ -493,7 +493,7 @@ class Histogram {
      * @returns
      */
     getFrequencies(field = this.#fieldInfo.field) {
-        const dataPoints = this.#parser.getValues(field, this.#limit)
+        const dataPoints = this.#parser.getValues(field, this.#limit, this.#filter)
 
         /**
          * @type {Record<number, number>}
