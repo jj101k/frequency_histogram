@@ -214,6 +214,16 @@ class Scaler {
         }
         return lastPos
     }
+
+    /**
+     * @abstract
+     * @param {number} x
+     * @param {number} y
+     * @returns {F}
+     */
+    valueAt(x, y) {
+        throw new Error("Not implemented")
+    }
 }
 
 /**
@@ -324,6 +334,28 @@ class HistogramScaler extends Scaler {
         }
         return lastPos
     }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {HistogramDatum}
+     */
+    valueAt(x, y) {
+        let y1
+        if(this.#preferLog ?? this.#field.exponentialValues) {
+            y1 = Math.exp(x) - this.#logOffset
+        } else {
+            y1 = x
+        }
+        let f
+        if(this.#field.expectsExponentialFrequency) {
+            // 0 may legitimately appear in the middle of exponential frequency sets
+            f = Math.exp(-y) - 0.001
+        } else {
+            f = -y
+        }
+        return {f, y: y1}
+    }
 }
 
 
@@ -353,6 +385,15 @@ class RawScaler extends Scaler {
      */
     displayY(d) {
         return d.y
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {RawDatum}
+     */
+    valueAt(x, y) {
+        return {x, y}
     }
 }
 
