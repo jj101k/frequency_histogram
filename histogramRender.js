@@ -251,7 +251,7 @@ class HistogramRender {
 
         const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
         const transform = svg.createSVGTransform()
-        transform.setTranslate(w/10, -h/10)
+        transform.setTranslate(w/10 + x / 10, -h/10)
         group.transform.baseVal.appendItem(transform)
         const transform2 = svg.createSVGTransform()
         transform2.setScale(9/10, 9/10)
