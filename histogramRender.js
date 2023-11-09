@@ -215,7 +215,7 @@ class HistogramRender {
             console.log("Deltas", cumulativeDeltas)
         }
 
-        const scaler = new HistogramScaler(this.#field, this.#preferLog)
+        const scaler = new FrequencyScaler(this.#field, this.#preferLog)
 
         const { compiledPaths, box, strokeWidth } = scaler.renderValues(cumulativeDeltas)
 

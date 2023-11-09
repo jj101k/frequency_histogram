@@ -147,6 +147,17 @@ class Scaler {
     /**
      * @protected
      *
+     * @param {*} minX
+     * @param {*} maxX
+     * @returns
+     */
+    getStrokeWidth(minX, maxX) {
+        return (maxX - minX) / 800
+    }
+
+    /**
+     * @protected
+     *
      * @param {F[]} values
      */
     prepare(values) {
@@ -193,7 +204,7 @@ class Scaler {
 
         return {compiledPaths: pathRenderer.compiledPaths,
             box: [box.x, box.y, box.w, box.h].join(" "),
-            strokeWidth: `${(maxX - minX) / 800}`}
+            strokeWidth: `${this.getStrokeWidth(minX, maxX)}`}
     }
 
     /**
@@ -233,7 +244,7 @@ class Scaler {
 /**
  * @extends {Scaler<HistogramDatum>}
  */
-class HistogramScaler extends Scaler {
+class FrequencyScaler extends Scaler {
     /**
      * Below this limit, points will be rendered correctly for the data (all
      * lines perpendicular); above, it will be rendered in a more representative
@@ -315,7 +326,7 @@ class HistogramScaler extends Scaler {
      */
     renderValuePoints(values, rescale, pathRenderer, firstPos) {
         let lastPos = firstPos
-        const renderSquare = values.length < HistogramScaler.renderSquareLimit
+        const renderSquare = values.length < FrequencyScaler.renderSquareLimit
         if (renderSquare) {
             for (const d of values) {
                 const x = this.displayX(d)
@@ -331,6 +342,123 @@ class HistogramScaler extends Scaler {
                 pathRenderer.line({ x, y })
                 lastPos = { x, y }
             }
+        }
+        return lastPos
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {HistogramDatum}
+     */
+    valueAt(x, y) {
+        let y1
+        if(this.#preferLog ?? this.#field.exponentialValues) {
+            y1 = Math.exp(x) - this.#logOffset
+        } else {
+            y1 = x
+        }
+        let f
+        if(this.#field.expectsExponentialFrequency) {
+            // 0 may legitimately appear in the middle of exponential frequency sets
+            f = Math.exp(-y) - 0.001
+        } else {
+            f = -y
+        }
+        return {f, y: y1}
+    }
+}
+
+
+/**
+ * @extends {Scaler<HistogramDatum>}
+ */
+class HistogramScaler extends Scaler {
+    /**
+     *
+     */
+    #field
+
+    /**
+     *
+     */
+    #logOffset = 0
+
+    /**
+     *
+     */
+    #preferLog
+
+    getStrokeWidth(minX, maxX) {
+        return 1/20
+    }
+
+    /**
+     *
+     * @param {EpwNamedNumberField} field
+     * @param {boolean | undefined} preferLog
+     */
+    constructor(field, preferLog) {
+        super()
+        this.#field = field
+        this.#preferLog = preferLog
+    }
+
+    /**
+     * @protected
+     *
+     * @param {HistogramDatum} d
+     * @returns
+     */
+    displayX(d) {
+        if(this.#preferLog ?? this.#field.exponentialValues) {
+            return Math.log(d.y + this.#logOffset)
+        } else {
+            return d.y
+        }
+    }
+
+    /**
+     * @protected
+     *
+     * @param {HistogramDatum} d
+     * @returns
+     */
+    displayY(d) {
+        if(this.#field.expectsExponentialFrequency) {
+            // 0 may legitimately appear in the middle of exponential frequency sets
+            return -Math.log(d.f + 0.001)
+        } else {
+            return -d.f
+        }
+    }
+
+    /**
+     * @protected
+     *
+     * @param {HistogramDatum[]} values
+     */
+    prepare(values) {
+        this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
+    }
+
+    /**
+     *
+     * @param {HistogramDatum[]} values
+     * @param {number} rescale
+     * @param {SvgPathRenderer} pathRenderer
+     * @param {{x: number, y: number}} firstPos
+     * @returns
+     */
+    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+        let lastPos = firstPos
+        // These are always discrete
+        for (const d of values) {
+            const x = this.displayX(d)
+            const y = this.displayY(d) * rescale
+            pathRenderer.addPathFrom({x, y: 0})
+            pathRenderer.line({ x, y })
+            lastPos = { x, y }
         }
         return lastPos
     }
