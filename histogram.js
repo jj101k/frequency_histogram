@@ -304,6 +304,44 @@ class Histogram {
         return this.#deltaInfo.deltas.slice()
     }
 
+    /**
+     *
+     */
+    get expectedMinDeltaY() {
+        let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
+        if(expectedMinDeltaY === undefined) {
+            const dataPoints = this.rawValues
+            /**
+             * @type {Set<number>}
+             */
+            const yValues = new Set()
+            for(const dataPoint of dataPoints) {
+                if(dataPoint.y !== null && dataPoint.y !== undefined) {
+                    yValues.add(dataPoint.y)
+                }
+            }
+            if(yValues.size > 1) {
+                let realMinDeltaY = Infinity
+                const yValuesOrdered = [...yValues].sort((a, b) => a - b)
+                let lastYValue = yValuesOrdered[0]
+                for(const yValue of yValuesOrdered.slice(1)) {
+                    const deltaY = yValue - lastYValue
+                    if(deltaY < realMinDeltaY) {
+                        realMinDeltaY = deltaY
+                    }
+                    lastYValue = yValue
+                }
+
+                expectedMinDeltaY = realMinDeltaY
+            } else {
+                console.warn("Not enough distinct values for a delta calculation, will use 1")
+                expectedMinDeltaY = 1
+            }
+        }
+
+        return expectedMinDeltaY
+    }
+
     get frequencies() {
         if(!this.#frequencies) {
             this.#frequencies = this.getFrequencies()
@@ -361,45 +399,16 @@ class Histogram {
     getDeltas() {
         const dataPoints = this.rawValues
 
-        let expectedMinDeltaY = this.#fieldInfo.expectedMinResolution
         // Special case: exactly one point
         if(dataPoints.length == 1) {
             return {deltas: [], zeroDeltaSpan: this.#fieldInfo.expectedMinResolution ?? 1,
                 zeroWidthPoints: [{y: dataPoints[0].y, zeroSpan: 1}]}
         }
-        if(expectedMinDeltaY === undefined) {
-            /**
-             * @type {Set<number>}
-             */
-            const yValues = new Set()
-            for(const dataPoint of dataPoints) {
-                if(dataPoint.y !== null && dataPoint.y !== undefined) {
-                    yValues.add(dataPoint.y)
-                }
-            }
-            if(yValues.size > 1) {
-                let realMinDeltaY = Infinity
-                const yValuesOrdered = [...yValues].sort((a, b) => a - b)
-                let lastYValue = yValuesOrdered[0]
-                for(const yValue of yValuesOrdered.slice(1)) {
-                    const deltaY = yValue - lastYValue
-                    if(deltaY < realMinDeltaY) {
-                        realMinDeltaY = deltaY
-                    }
-                    lastYValue = yValue
-                }
-
-                expectedMinDeltaY = realMinDeltaY
-            } else {
-                console.warn("Not enough distinct values for a delta calculation, will use 1")
-                expectedMinDeltaY = 1
-            }
-        }
 
         // This will be a fraction, so we'll try to get a good decimal
         // representation for sanity's sake.
         const decimalDigits = 10
-        const nominalZeroDeltaSpan = expectedMinDeltaY / 2
+        const nominalZeroDeltaSpan = this.expectedMinDeltaY / 2
         const headDigits = Math.floor(Math.log10(nominalZeroDeltaSpan))
         const roundTo = Math.pow(10, decimalDigits - headDigits)
         const zeroDeltaSpan = Math.round(nominalZeroDeltaSpan * roundTo) / roundTo
@@ -495,6 +504,8 @@ class Histogram {
     getFrequencies(field = this.#fieldInfo.field) {
         const dataPoints = this.#parser.getValues(field, this.#limit, this.#filter)
 
+        const expectedMinDeltaY = this.expectedMinDeltaY
+
         /**
          * @type {Record<number, number>}
          */
@@ -508,7 +519,23 @@ class Histogram {
             }
             frequencies[dataPoint.y]++
         }
-        return Object.entries(frequencies).map(([y, f]) => ({y: +y, f})).sort((a, b) => a.y - b.y)
+        const orderedFrequencies = Object.entries(frequencies).map(([y, f]) => ({y: +y, f})).sort((a, b) => a.y - b.y)
+        /**
+         * @type {typeof orderedFrequencies}
+         */
+        const filledFrequencies = []
+        for(const [i, frequency] of Object.entries(orderedFrequencies)) {
+            filledFrequencies.push(frequency)
+            if(!orderedFrequencies[+i+1]) break
+            const nextY = orderedFrequencies[+i+1].y
+            let thisY = frequency.y
+            while(thisY + expectedMinDeltaY < nextY) {
+                thisY += expectedMinDeltaY
+                filledFrequencies.push({y: thisY, f: 0})
+            }
+        }
+
+        return filledFrequencies
     }
 
     /**

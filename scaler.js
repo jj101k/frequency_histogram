@@ -239,7 +239,7 @@ class HistogramScaler extends Scaler {
      * lines perpendicular); above, it will be rendered in a more representative
      * way for the underlying expectations, as directly connected points.
      */
-    static renderSquareLimit = 50
+    static renderSquareLimit = 200
 
     /**
      *
