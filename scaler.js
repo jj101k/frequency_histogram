@@ -204,7 +204,7 @@ class Scaler {
 
         return {compiledPaths: pathRenderer.compiledPaths,
             box: [box.x, box.y, box.w, box.h].join(" "),
-            strokeWidth: `${this.getStrokeWidth(minX, maxX)}`}
+            strokeWidth: this.getStrokeWidth(minX, maxX)}
     }
 
     /**

@@ -51,6 +51,51 @@ class HistogramRender {
 
     /**
      *
+     * @param {string} box
+     * @param {number} strokeWidth
+     * @param {SVGSVGElement} svg
+     * @param {Scaler} scaler
+     * @returns
+     */
+    #addAxes(box, strokeWidth, svg, scaler) {
+        const [x, y, w, h] = box.split(/ /).map(v => +v)
+        const axes = document.createElementNS("http://www.w3.org/2000/svg", "path")
+        axes.setAttribute("d", `M ${x + w / 10} ${y} L ${x + w / 10} ${y + h - h / 10} L ${x + w} ${y + h - h / 10}`)
+        axes.setAttribute("stroke-width", "" + (strokeWidth * 1.5))
+        axes.setAttribute("stroke", "black")
+        axes.setAttribute("fill", "none")
+        svg.append(axes)
+
+        const bottomLeft = scaler.valueAt(x, y + h)
+        const topRight = scaler.valueAt(x + w, y)
+        // Here, the vertical scale doesn't have a specific meaning
+        const label1 = document.createElementNS("http://www.w3.org/2000/svg", "text")
+        label1.textContent = "" + bottomLeft.y
+        label1.style.fontSize = `${w / 75}px`
+        svg.append(label1)
+        label1.setAttribute("x", "" + (x + w / 10))
+        label1.setAttribute("y", "" + (y + h))
+
+        const label2 = document.createElementNS("http://www.w3.org/2000/svg", "text")
+        label2.textContent = "" + topRight.y
+        label2.style.fontSize = `${w / 75}px`
+        svg.append(label2)
+        label2.setAttribute("x", "" + (x + w - label2.getComputedTextLength()))
+        label2.setAttribute("y", "" + (y + h))
+
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
+        const transform = svg.createSVGTransform()
+        transform.setTranslate(w / 10 + x / 10, y / 10)
+        group.transform.baseVal.appendItem(transform)
+        const transform2 = svg.createSVGTransform()
+        transform2.setScale(9 / 10, 9 / 10)
+        group.transform.baseVal.appendItem(transform2)
+        svg.append(group)
+        return group
+    }
+
+    /**
+     *
      */
     #addPath() {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
@@ -224,45 +269,13 @@ class HistogramRender {
         }
         svg.setAttribute("viewBox", box)
 
-        const [x, y, w, h] = box.split(/ /).map(v => +v)
-        const axes = document.createElementNS("http://www.w3.org/2000/svg", "path")
-        axes.setAttribute("d", `M ${x + w/10} ${y} L ${x + w/10} ${y + h - h/10} L ${x + w} ${y + h - h/10}`)
-        axes.setAttribute("stroke-width", "" + (+strokeWidth * 1.5))
-        axes.setAttribute("stroke", "black")
-        axes.setAttribute("fill", "none")
-        svg.append(axes)
-
-        const bottomLeft = scaler.valueAt(x, y + h)
-        const topRight = scaler.valueAt(x + w, y)
-        // Here, the vertical scale doesn't have a specific meaning
-        const label1 = document.createElementNS("http://www.w3.org/2000/svg", "text")
-        label1.textContent = "" + bottomLeft.y
-        label1.style.fontSize = `${w / 75}px`
-        svg.append(label1)
-        label1.setAttribute("x", "" + (x + w/10))
-        label1.setAttribute("y", "" + (y + h))
-
-        const label2 = document.createElementNS("http://www.w3.org/2000/svg", "text")
-        label2.textContent = "" + topRight.y
-        label2.style.fontSize = `${w / 75}px`
-        svg.append(label2)
-        label2.setAttribute("x", "" + (x + w - label2.getComputedTextLength()))
-        label2.setAttribute("y", "" + (y + h))
-
-        const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
-        const transform = svg.createSVGTransform()
-        transform.setTranslate(w / 10 + x / 10, y / 10)
-        group.transform.baseVal.appendItem(transform)
-        const transform2 = svg.createSVGTransform()
-        transform2.setScale(9/10, 9/10)
-        group.transform.baseVal.appendItem(transform2)
-        svg.append(group)
+        const group = this.#addAxes(box, strokeWidth, svg, scaler)
 
         for(const compiledPath of compiledPaths) {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", strokeWidth)
+            path.setAttribute("stroke-width", "" + strokeWidth)
             group.append(path)
         }
     }
@@ -291,12 +304,14 @@ class HistogramRender {
         }
         svg.setAttribute("viewBox", box)
 
+        const group = this.#addAxes(box, strokeWidth, svg, scaler)
+
         for(const compiledPath of compiledPaths) {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", strokeWidth)
-            svg.append(path)
+            path.setAttribute("stroke-width", "" + strokeWidth)
+            group.append(path)
         }
     }
 
@@ -328,7 +343,7 @@ class HistogramRender {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", strokeWidth)
+            path.setAttribute("stroke-width", "" + strokeWidth)
             svg.append(path)
         }
     }
@@ -361,7 +376,7 @@ class HistogramRender {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", strokeWidth)
+            path.setAttribute("stroke-width", "" + strokeWidth)
             path.setAttribute("stroke", "rgba(255, 0, 0, 0.3)")
             svg.append(path)
         }
