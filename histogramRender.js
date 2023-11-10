@@ -270,12 +270,14 @@ class HistogramRender {
         svg.setAttribute("viewBox", box)
 
         const group = this.#addAxes(box, strokeWidth, svg, scaler)
+        const [x, y, w, h] = box.split(/ /).map(v => +v)
 
         for(const compiledPath of compiledPaths) {
             const path = this.#addPath()
-            path.setAttribute("d", compiledPath)
+            path.setAttribute("d", compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
 
             path.setAttribute("stroke-width", "" + strokeWidth)
+            path.setAttribute("fill", "rgba(255, 0, 0, 0.3)")
             group.append(path)
         }
     }
