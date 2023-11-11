@@ -1,4 +1,5 @@
 //@ts-check
+/// <reference path="./epwDataFormat.js" />
 
 /**
  *
@@ -123,7 +124,6 @@ class SvgPathRenderer {
  */
 class Scaler {
     /**
-     * @protected
      * @abstract
      *
      * @param {F} d
@@ -134,7 +134,6 @@ class Scaler {
     }
 
     /**
-     * @protected
      * @abstract
      *
      * @param {F} d
@@ -272,14 +271,13 @@ class FrequencyScaler extends Scaler {
      * @param {EpwNamedNumberField} field
      * @param {boolean | undefined} preferLog
      */
-    constructor(field, preferLog) {
+    constructor(field, preferLog = undefined) {
         super()
         this.#field = field
         this.#preferLog = preferLog
     }
 
     /**
-     * @protected
      *
      * @param {HistogramDatum} d
      * @returns
@@ -293,7 +291,6 @@ class FrequencyScaler extends Scaler {
     }
 
     /**
-     * @protected
      *
      * @param {HistogramDatum} d
      * @returns
@@ -405,7 +402,6 @@ class HistogramScaler extends Scaler {
     }
 
     /**
-     * @protected
      *
      * @param {HistogramDatum} d
      * @returns
@@ -419,7 +415,6 @@ class HistogramScaler extends Scaler {
     }
 
     /**
-     * @protected
      *
      * @param {HistogramDatum} d
      * @returns
@@ -496,7 +491,6 @@ class HistogramScaler extends Scaler {
  */
 class RawScaler extends Scaler {
     /**
-     * @protected
      *
      * @param {RawDatum} d
      * @returns
@@ -506,7 +500,6 @@ class RawScaler extends Scaler {
     }
 
     /**
-     * @protected
      *
      * @param {RawDatum} d
      * @returns
@@ -530,7 +523,6 @@ class RawScaler extends Scaler {
  */
 class RawScalerOverlap extends RawScaler {
     /**
-     * @protected
      *
      * @param {RawDatum} d
      * @returns

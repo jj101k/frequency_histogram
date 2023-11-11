@@ -299,34 +299,6 @@ class HistogramDeltasNoiseReduced {
 
     /**
      *
-     * @param {{y: number, dF: number}[]} values
-     */
-    #addZeroDeltas(...values) {
-        if(!values.length) {
-            return 0
-        }
-        let vL = this.#zeroDeltas[this.#zeroDeltas.length - 1]
-        let added = 0
-        if(!vL) {
-            vL = values[0]
-            values.shift()
-            this.#zeroDeltas.push(vL)
-            added++
-        }
-        for(const v of values) {
-            if(v.y == vL.y) {
-                vL.dF += v.dF
-            } else {
-                this.#zeroDeltas.push(v)
-                added++
-                vL = v
-            }
-        }
-        return added
-    }
-
-    /**
-     *
      */
     #addNextSpanPoint() {
         if(this.#nextSpanPoint) {
@@ -348,9 +320,21 @@ class HistogramDeltasNoiseReduced {
         // 2. The whitelist point on this, if applicable - for next time
         // 3. The whitelist point after this.
 
-        let whitelistPointBefore = this.#nextWhitelistPoint
-        if(!whitelistPointBefore) {
-            throw new Error()
+        if(this.#nextWhitelistPoint === null) {
+            throw new Error("Internal error")
+        }
+        /**
+         * @type {number}
+         */
+        let whitelistPointBefore
+        if(this.#nextWhitelistPoint < zeroPoint.y) {
+            whitelistPointBefore = this.#nextWhitelistPoint
+        } else if(this.#sensorPointWhitelist.length) {
+            // It shouldn't be _after_, so take the next whitelist point and
+            // invert it
+            whitelistPointBefore = zeroPoint.y - (this.#sensorPointWhitelist[0] - zeroPoint.y)
+        } else {
+            throw new Error("Internal error: unable to find a matching whitelist point")
         }
 
         // Suck up until the next point is after.
@@ -543,11 +527,17 @@ class Histogram {
         const acceptedValues = new Set()
         let last = orderedFrequenciesReal[0]
         acceptedValues.add(last.y)
+
+        const scaler = new FrequencyScaler(this.#fieldInfo.field)
+
         for (const v of orderedFrequenciesReal.slice(1)) {
-            if (10 * v.f / last.f > 2) {
+            if (10 * scaler.displayY(v) / scaler.displayY(last) > 2) {
                 last = v
                 acceptedValues.add(v.y)
             }
+        }
+        if(acceptedValues.size < 2) {
+            throw new Error(`Internal error: noise reduction produced ${acceptedValues.size} values from ${orderedFrequenciesReal.length}`)
         }
         return acceptedValues
     }
@@ -582,10 +572,10 @@ class Histogram {
         if(!this.#deltaInfo) {
             this.#deltaInfo = this.getDeltas()
         }
-        if(this.#noiseReduction) {
+        const orderedFrequencies = this.#noiseReduction ? this.#getOrderedFrequencies(this.rawValues) : undefined
+        if(orderedFrequencies && orderedFrequencies.length > 1) {
             return new HistogramDeltasNoiseReduced(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints,
-                [...this.#getAcceptedValues(this.#getOrderedFrequencies(this.rawValues))]).combined
-
+                [...this.#getAcceptedValues(orderedFrequencies)]).combined
         } else {
             return new HistogramDeltas(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints).combined
         }
