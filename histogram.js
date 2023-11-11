@@ -1,4 +1,6 @@
 //@ts-check
+/// <reference path="./epwDataFormat.js" />
+/// <reference path="./epwParser.js" />
 
 /**
  *
@@ -227,6 +229,264 @@ class HistogramDeltas {
 }
 
 /**
+ * This is similar but uses a whitelist of sensor points instead.
+ */
+class HistogramDeltasNoiseReduced {
+    /**
+     * @type {{y: number, dF: number}[]}
+     */
+    #combinedDeltas = []
+    /**
+     * @type {{y: number, dF: number} | null}
+     */
+    #nextSpanPoint = null
+    /**
+     * @type {number | null}
+     */
+    #nextWhitelistPoint = null
+    /**
+     * @type {{y: number, zeroSpan: number} | null}
+     */
+    #nextZeroPoint = null
+    /**
+     *
+     */
+    #sensorPointWhitelist
+    /**
+     *
+     */
+    #spanPoints
+    /**
+     * @type {{y: number, dF: number}[]}
+     */
+    #zeroDeltas = []
+    /**
+     *
+     */
+    #zeroDeltaSpan
+    /**
+     *
+     */
+    #zeroWidthPoints
+
+    /**
+     *
+     * @param {{y: number, dF: number}[]} values
+     */
+    #addDeltas(...values) {
+        if(!values.length) {
+            return 0
+        }
+        let vL = this.#combinedDeltas[this.#combinedDeltas.length - 1]
+        let added = 0
+        if(!vL) {
+            vL = values[0]
+            values.shift()
+            this.#combinedDeltas.push(vL)
+            added++
+        }
+        for(const v of values) {
+            if(v.y == vL.y) {
+                vL.dF += v.dF
+            } else {
+                this.#combinedDeltas.push(v)
+                added++
+                vL = v
+            }
+        }
+        return added
+    }
+
+    /**
+     *
+     * @param {{y: number, dF: number}[]} values
+     */
+    #addZeroDeltas(...values) {
+        if(!values.length) {
+            return 0
+        }
+        let vL = this.#zeroDeltas[this.#zeroDeltas.length - 1]
+        let added = 0
+        if(!vL) {
+            vL = values[0]
+            values.shift()
+            this.#zeroDeltas.push(vL)
+            added++
+        }
+        for(const v of values) {
+            if(v.y == vL.y) {
+                vL.dF += v.dF
+            } else {
+                this.#zeroDeltas.push(v)
+                added++
+                vL = v
+            }
+        }
+        return added
+    }
+
+    /**
+     *
+     */
+    #addNextSpanPoint() {
+        if(this.#nextSpanPoint) {
+            this.#addDeltas(this.#nextSpanPoint)
+            this.#getNextSpanPoint()
+        }
+    }
+
+    /**
+     *
+     */
+    #addZeroPointFull() {
+        const zeroPoint = this.#nextZeroPoint
+        if(!zeroPoint) {
+            throw new Error("Internal error")
+        }
+        // We want:
+        // 1. The last whitelist point _before_ this
+        // 2. The whitelist point on this, if applicable - for next time
+        // 3. The whitelist point after this.
+
+        let whitelistPointBefore = this.#nextWhitelistPoint
+        if(!whitelistPointBefore) {
+            throw new Error()
+        }
+
+        // Suck up until the next point is after.
+        while(this.#sensorPointWhitelist.length && this.#sensorPointWhitelist[0] <= zeroPoint.y) {
+            this.#getNextWhitelistPoint()
+            if(this.#nextWhitelistPoint !== null && this.#nextWhitelistPoint < zeroPoint.y) {
+                whitelistPointBefore = this.#nextWhitelistPoint
+            }
+        }
+
+        const lastY = whitelistPointBefore
+        const nextY = this.#sensorPointWhitelist.length ? this.#sensorPointWhitelist[0] : (zeroPoint.y + (zeroPoint.y - lastY))
+
+        const [lowZeroPoint, highZeroPoint] = [
+            {y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY)},
+            {y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY)},
+        ]
+        // Now we have the answer we can push the values
+        this.#zeroDeltas.push(lowZeroPoint, highZeroPoint)
+        this.#getNextZeroPoint()
+    }
+
+    /**
+     *
+     */
+    #getNextSpanPoint() {
+        this.#nextSpanPoint = this.#shiftSpanPoints()
+    }
+
+    /**
+     *
+     */
+    #getNextWhitelistPoint() {
+        this.#nextWhitelistPoint = this.#shiftWhitelistPoints()
+    }
+
+    /**
+     *
+     */
+    #getNextZeroPoint() {
+        this.#nextZeroPoint = this.#shiftZeroPoints()
+    }
+
+    /**
+     *
+     * @returns
+     */
+    #shiftSpanPoints() {
+        const v0 = this.#spanPoints.shift()
+        if(!v0) {
+            return null
+        }
+        const out = {...v0}
+        while(this.#spanPoints.length && this.#spanPoints[0].y == v0.y) {
+            out.dF += this.#spanPoints[0].dF
+            this.#spanPoints.shift()
+        }
+        return out
+    }
+
+    /**
+     *
+     * @returns
+     */
+    #shiftWhitelistPoints() {
+        return this.#sensorPointWhitelist.shift() ?? null
+    }
+
+    /**
+     *
+     * @returns
+     */
+    #shiftZeroPoints() {
+        const v0 = this.#zeroWidthPoints.shift()
+        if(!v0) {
+            return null
+        }
+        const out = {...v0}
+        while(this.#zeroWidthPoints.length && this.#zeroWidthPoints[0].y == v0.y) {
+            out.zeroSpan += this.#zeroWidthPoints[0].zeroSpan
+            this.#zeroWidthPoints.shift()
+        }
+        return out
+    }
+
+    /**
+     *
+     * @param {{y: number, dF: number}[]} deltas
+     * @param {number} zeroDeltaSpan
+     * @param {{y: number, zeroSpan: number}[]} zeroWidthPoints
+     * @param {number[]} sensorPointWhitelist
+     */
+    constructor(deltas, zeroDeltaSpan, zeroWidthPoints, sensorPointWhitelist) {
+        this.#spanPoints = deltas
+        this.#zeroDeltaSpan = zeroDeltaSpan
+        this.#zeroWidthPoints = zeroWidthPoints
+        this.#sensorPointWhitelist = sensorPointWhitelist
+        console.log("Initial points", sensorPointWhitelist)
+        this.#getNextZeroPoint()
+        this.#getNextSpanPoint()
+        this.#getNextWhitelistPoint()
+    }
+
+    /**
+     * This provides the deltas with all values with the same y value combined.
+     */
+    get combined() {
+        // We do _two_ passes here:
+        // One for the zero points -> temp
+
+        while(this.#nextZeroPoint) {
+            this.#addZeroPointFull()
+        }
+
+        this.#zeroDeltas.sort((a, b) => a.y - b.y)
+
+        // Then one for the nonzero points + <- temp
+
+        while(this.#nextSpanPoint) {
+            const nsp = this.#nextSpanPoint
+            const i = this.#zeroDeltas.findIndex(d => d.y > nsp.y)
+            if(i < 0) {
+                this.#addDeltas(...this.#zeroDeltas)
+                this.#zeroDeltas = []
+            } else {
+                this.#addDeltas(...this.#zeroDeltas.slice(0, i))
+                this.#zeroDeltas = this.#zeroDeltas.slice(i)
+            }
+            this.#addNextSpanPoint()
+        }
+
+        return {combinedDeltas: this.#combinedDeltas, zeroDeltaSpan: this.#zeroDeltaSpan}
+    }
+}
+
+/**
  *
  */
 class Histogram {
@@ -259,6 +519,11 @@ class Histogram {
     /**
      *
      */
+    #noiseReduction = false
+
+    /**
+     *
+     */
     #parser
 
     /**
@@ -267,13 +532,63 @@ class Histogram {
     #raw = false
 
     /**
+     *
+     * @param {{y: number, f: number}[]} orderedFrequenciesReal
+     * @returns
+     */
+    #getAcceptedValues(orderedFrequenciesReal) {
+        /**
+         * @type {Set<number>}
+         */
+        const acceptedValues = new Set()
+        let last = orderedFrequenciesReal[0]
+        acceptedValues.add(last.y)
+        for (const v of orderedFrequenciesReal.slice(1)) {
+            if (10 * v.f / last.f > 2) {
+                last = v
+                acceptedValues.add(v.y)
+            }
+        }
+        return acceptedValues
+    }
+
+    /**
+     *
+     * @param {{x: number, y: number}[]} dataPoints
+     * @returns
+     */
+    #getOrderedFrequencies(dataPoints) {
+        /**
+         * @type {Record<number, number>}
+         */
+        const frequencies = {}
+        for (const dataPoint of dataPoints) {
+            if (dataPoint.y === undefined || dataPoint.y === null) {
+                continue
+            }
+            if (!frequencies[dataPoint.y]) {
+                frequencies[dataPoint.y] = 0
+            }
+            frequencies[dataPoint.y]++
+        }
+        const orderedFrequenciesReal = Object.entries(frequencies).map(([y, f]) => ({ y: +y, f })).sort((a, b) => a.y - b.y)
+        return orderedFrequenciesReal
+    }
+
+    /**
      * This provides the deltas with all values with the same y value combined.
      */
     get combined() {
         if(!this.#deltaInfo) {
             this.#deltaInfo = this.getDeltas()
         }
-        return new HistogramDeltas(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints).combined
+        if(this.#noiseReduction) {
+            return new HistogramDeltasNoiseReduced(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints,
+                [...this.#getAcceptedValues(this.#getOrderedFrequencies(this.rawValues))]).combined
+
+        } else {
+            return new HistogramDeltas(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints).combined
+        }
     }
 
     /**
@@ -381,6 +696,18 @@ class Histogram {
     }
     set limit(v) {
         this.#limit = v
+        this.#deltaInfo = undefined
+        this.#frequencies = undefined
+    }
+
+    /**
+     *
+     */
+    get noiseReduction() {
+        return this.#noiseReduction
+    }
+    set noiseReduction(v) {
+        this.#noiseReduction = v
         this.#deltaInfo = undefined
         this.#frequencies = undefined
     }
@@ -499,27 +826,28 @@ class Histogram {
     /**
      *
      * @param {EpwNamedNumberField} field
+     * @param {boolean} noiseReduction
      * @returns
      */
-    getFrequencies(field = this.#fieldInfo.field) {
+    getFrequencies(field = this.#fieldInfo.field, noiseReduction = this.#noiseReduction) {
         const dataPoints = this.#parser.getValues(field, this.#limit, this.#filter)
 
         const expectedMinDeltaY = this.expectedMinDeltaY
 
+        const orderedFrequenciesReal = this.#getOrderedFrequencies(dataPoints)
+
         /**
-         * @type {Record<number, number>}
+         * @type {typeof orderedFrequenciesReal}
          */
-        const frequencies = {}
-        for(const dataPoint of dataPoints) {
-            if(dataPoint.y === undefined || dataPoint.y === null) {
-                continue
-            }
-            if(!frequencies[dataPoint.y]) {
-                frequencies[dataPoint.y] = 0
-            }
-            frequencies[dataPoint.y]++
+        let orderedFrequencies
+        if(noiseReduction) {
+            const acceptedValues = this.#getAcceptedValues(orderedFrequenciesReal)
+
+            orderedFrequencies = orderedFrequenciesReal.filter(v => acceptedValues.has(v.y))
+        } else {
+            orderedFrequencies = orderedFrequenciesReal
         }
-        const orderedFrequencies = Object.entries(frequencies).map(([y, f]) => ({y: +y, f})).sort((a, b) => a.y - b.y)
+
         /**
          * @type {typeof orderedFrequencies}
          */

@@ -1,4 +1,7 @@
 //@ts-check
+/// <reference path="./histogramRender.js" />
+/// <reference path="./epwImporter.js" />
+/// <reference path="../pathfind/Frameworker.js" />
 
 function main() {
     /**
@@ -21,7 +24,7 @@ function main() {
             return this.field.units
         },
     }
-    Frameworker.proxy(retainedData, hr, ["period", "debug", "field", "preferLog", "first24", "graphType"],
+    Frameworker.proxy(retainedData, hr, ["noiseReduction", "period", "debug", "field", "preferLog", "first24", "graphType"],
         {}, [])
 
     const f = new Frameworker(retainedData, document, {

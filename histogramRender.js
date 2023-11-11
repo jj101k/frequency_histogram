@@ -1,4 +1,7 @@
 //@ts-check
+/// <reference path="./epwDataFormat.js" />
+/// <reference path="./histogram.js" />
+/// <reference path="./scaler.js" />
 
 /**
  *
@@ -167,6 +170,20 @@ class HistogramRender {
     set graphType(v) {
         this.#graphType = v
         this.render()
+    }
+
+    /**
+     *
+     */
+    get noiseReduction() {
+        return this.histogram?.noiseReduction ?? false
+    }
+
+    set noiseReduction(v) {
+        if(this.histogram) {
+            this.histogram.noiseReduction = v
+            this.render()
+        }
     }
 
     /**
