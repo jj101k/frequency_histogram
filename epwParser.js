@@ -1,4 +1,5 @@
 //@ts-check
+/// <reference path="epwDataFormat.js" />
 
 /**
  *
@@ -14,6 +15,13 @@ class EpwRow {
      */
     get #lineParts() {
         return this.#line.split(/,/)
+    }
+
+    /**
+     *
+     */
+    get dataSourceRef() {
+        return this.#lineParts.slice(0, 2).join("-")
     }
 
     /**
@@ -66,6 +74,7 @@ class EpwParser {
      * @param {EpwNamedField<T | null>} field
      * @param {T | undefined} limit
      * @param {((value: EpwRow) => boolean) | undefined} filter
+     * @returns
      */
     getValues(field, limit = undefined, filter = undefined) {
         /**
@@ -95,8 +104,28 @@ class EpwParser {
                 }
             }
         }
+
+        /**
+         * @type {Map<string, number>}
+         */
+        const dataSourceRefs = new Map()
+        let nextDataSourceRef = 1
+        /**
+         *
+         * @param {EpwRow} r
+         */
+        const uniqueDataSource = (r) => {
+            const ref = r.dataSourceRef
+            const u = dataSourceRefs.get(ref)
+            if(u !== undefined) {
+                return u
+            }
+            dataSourceRefs.set(ref, nextDataSourceRef)
+            return nextDataSourceRef++
+        }
+
         const r = rows.map(
-            (r, i) => ({x: i, y: r.get(field)})
+            (r, i) => ({x: i, y: r.get(field), dataSource: uniqueDataSource(r)})
         )
 
         const sampleSize = 24

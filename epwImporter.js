@@ -1,4 +1,6 @@
 //@ts-check
+/// <reference path="histogramRender.js" />
+
 /**
  *
  */
