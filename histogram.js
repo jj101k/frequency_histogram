@@ -558,13 +558,27 @@ class Histogram {
             let last = orderedFrequenciesReal[0]
             acceptedValues.add(last.y)
 
+            let i = 0
             for (const v of orderedFrequenciesReal.slice(1)) {
-                if (10 * scaler.displayY(v) / scaler.displayY(last) > 2) {
+                // Note these values are flipped
+                const dv = scaler.displayY(v)
+                // f0: It's >20% of the previous accepted value
+                if (5 * dv < scaler.displayY(last)) {
                     last = v
                     acceptedValues.add(v.y)
+                } else {
+                    // f1: It's >20% of the mean of the next 10 pending
+                    // values
+                    const n10mean = orderedFrequenciesReal.slice(i+1, i+1+10).reduce((p, c) => ({t: p.t + scaler.displayY(c), c: p.c + 1}), {t: 0, c: 0})
+                    if(n10mean.c && 5 * dv < n10mean.t / n10mean.c) {
+                        last = v
+                        acceptedValues.add(v.y)
+                    }
                 }
+                i++
             }
             if(acceptedValues.size < 2) {
+                console.warn(orderedFrequenciesReal, acceptedValues)
                 throw new Error(`Internal error: noise reduction produced ${acceptedValues.size} values from ${orderedFrequenciesReal.length}`)
             }
             acceptedValuesByDS[ds] = acceptedValues
