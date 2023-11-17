@@ -1,10 +1,11 @@
 //@ts-check
+/// <reference path="histogramDeltasAny.js" />
 /// <reference path="sensorWhitelistState.js" />
 
 /**
  * This is similar but uses a whitelist of sensor points instead.
  */
-class HistogramDeltasNoiseReduced {
+class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
     /**
      * @type {{y: number, dF: number}[]}
      */
@@ -143,9 +144,8 @@ class HistogramDeltasNoiseReduced {
                     console.log(spwState.nextPoint, spwState.points)
                     throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
                 }
-                const after = this.#zeroBoundPoints[1]
                 // We have a high point only
-                return {lastY: zeroPoint.y - (after - zeroPoint.y), nextY: after}
+                return this.extrapolateBefore(zeroPoint.y, this.#zeroBoundPoints[1])
             }
             // Otherwise, we have a low point at least.
 
@@ -154,7 +154,7 @@ class HistogramDeltasNoiseReduced {
                 this.#zeroBoundPoints.shift()
             }
             const [lastY, , nextY] = this.#zeroBoundPoints
-            return {lastY, nextY: nextY ?? (zeroPoint.y + (zeroPoint.y - lastY))}
+            return this.extrapolateAfter(lastY, zeroPoint.y, nextY)
         }
 
         /**
@@ -167,7 +167,7 @@ class HistogramDeltasNoiseReduced {
         } else {
             // It shouldn't be _after_, so take the next whitelist point and
             // invert it
-            whitelistPointBefore = zeroPoint.y - (spwState.points[0] - zeroPoint.y)
+            whitelistPointBefore = this.beforePoint(zeroPoint.y, spwState.points[0])
         }
 
         // Suck up until the next point is after.
@@ -178,9 +178,7 @@ class HistogramDeltasNoiseReduced {
             }
         }
 
-        const lastY = whitelistPointBefore
-        const nextY = spwState.points.length ? spwState.points[0] : (zeroPoint.y + (zeroPoint.y - lastY))
-        return { lastY, nextY }
+        return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, spwState.points[0])
     }
 
     /**
@@ -225,6 +223,7 @@ class HistogramDeltasNoiseReduced {
      * @param {Record<number, Set<number>>} sensorPointWhitelist
      */
     constructor(deltas, zeroDeltaSpan, zeroWidthPoints, sensorPointWhitelist) {
+        super()
         this.#spanPoints = deltas
         this.#zeroDeltaSpan = zeroDeltaSpan
         this.#zeroWidthPoints = zeroWidthPoints

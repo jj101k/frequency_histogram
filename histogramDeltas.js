@@ -1,9 +1,10 @@
 //@ts-check
+/// <reference path="histogramDeltasAny.js" />
 
 /**
  *
  */
-class HistogramDeltas {
+class HistogramDeltas extends HistogramDeltasAny {
     /**
      * @type {{y: number, dF: number}[]}
      */
@@ -99,14 +100,14 @@ class HistogramDeltas {
         if (possibleNextY.length) {
             nextY = Math.min(...possibleNextY)
         } else if (this.#lastY) {
-            nextY = zeroPoint.y + (zeroPoint.y - this.#lastY)
+            nextY = this.afterPoint(this.#lastY, zeroPoint.y)
         } else {
             // This is an estimate!
             nextY = zeroPoint.y + this.#zeroDeltaSpan
         }
         const nextLastY = zeroPoint.y
         // Estimate if needed
-        const lastY = this.#lastY ?? (zeroPoint.y - (nextY - zeroPoint.y))
+        const lastY = this.#lastY ?? this.beforePoint(zeroPoint.y, nextY)
         const [lowZeroPoint, highZeroPoint] = [
             { y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY) },
             { y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY) },
@@ -178,6 +179,7 @@ class HistogramDeltas {
      * @param {{y: number, zeroSpan: number}[]} zeroWidthPoints
      */
     constructor(deltas, zeroDeltaSpan, zeroWidthPoints) {
+        super()
         this.#spanPoints = deltas
         this.#zeroDeltaSpan = zeroDeltaSpan
         this.#zeroWidthPoints = zeroWidthPoints
