@@ -148,15 +148,13 @@ class HistogramDeltasNoiseReduced {
                 return {lastY: zeroPoint.y - (after - zeroPoint.y), nextY: after}
             }
             // Otherwise, we have a low point at least.
+
+            // Wind forward until it's [before, on, after]
             while (this.#zeroBoundPoints[1] < zeroPoint.y) {
                 this.#zeroBoundPoints.shift()
             }
-            const lastY = this.#zeroBoundPoints[0]
-            if(this.#zeroBoundPoints.length >= 3) {
-                return {lastY, nextY: this.#zeroBoundPoints[2]}
-            } else {
-                return {lastY, nextY: zeroPoint.y + (zeroPoint.y - lastY)}
-            }
+            const [lastY, , nextY] = this.#zeroBoundPoints
+            return {lastY, nextY: nextY ?? (zeroPoint.y + (zeroPoint.y - lastY))}
         }
 
         /**
