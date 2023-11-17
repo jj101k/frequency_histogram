@@ -6,10 +6,6 @@
  */
 class HistogramDeltasNoiseReduced {
     /**
-     *
-     */
-    #ap
-    /**
      * @type {{y: number, dF: number}[]}
      */
     #combinedDeltas = [];
@@ -23,10 +19,6 @@ class HistogramDeltasNoiseReduced {
     #nextZeroPoint = null;
 
     /**
-     *
-     */
-    #pointsAround
-    /**
      * @type {Record<number, SensorWhitelistState>}
      */
     #spwStates
@@ -34,6 +26,11 @@ class HistogramDeltasNoiseReduced {
      *
      */
     #spanPoints
+    /**
+     * This is where a zero-width point could fit. This will decrease in size as
+     * points are enumerated.
+     */
+    #zeroBoundPoints
     /**
      * @type {{y: number, dF: number}[]}
      */
@@ -141,22 +138,22 @@ class HistogramDeltasNoiseReduced {
             // noise reduction
             // We know that the point list contains this one. We don't know if
             // it contains any others, nor if they are above or below this one.
-            if (this.#ap[0] == zeroPoint.y) {
-                if(this.#ap.length == 1) {
+            if (this.#zeroBoundPoints[0] == zeroPoint.y) {
+                if(this.#zeroBoundPoints.length == 1) {
                     console.log(spwState.nextPoint, spwState.points)
                     throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
                 }
-                const after = this.#ap[1]
+                const after = this.#zeroBoundPoints[1]
                 // We have a high point only
                 return {lastY: zeroPoint.y - (after - zeroPoint.y), nextY: after}
             }
             // Otherwise, we have a low point at least.
-            while (this.#ap[1] < zeroPoint.y) {
-                this.#ap.shift()
+            while (this.#zeroBoundPoints[1] < zeroPoint.y) {
+                this.#zeroBoundPoints.shift()
             }
-            const lastY = this.#ap[0]
-            if(this.#ap.length >= 3) {
-                return {lastY, nextY: this.#ap[2]}
+            const lastY = this.#zeroBoundPoints[0]
+            if(this.#zeroBoundPoints.length >= 3) {
+                return {lastY, nextY: this.#zeroBoundPoints[2]}
             } else {
                 return {lastY, nextY: zeroPoint.y + (zeroPoint.y - lastY)}
             }
@@ -236,42 +233,13 @@ class HistogramDeltasNoiseReduced {
         this.#spwStates = Object.fromEntries(
             Object.entries(sensorPointWhitelist).map(([ds, whitelist]) => [ds, new SensorWhitelistState(whitelist)])
         )
-        /**
-         * @type {Set<number>}
-         */
-        const needPointsAround = new Set()
-        // If there are any data sources with <2 points, we need a fallback.
-        for(const [ds, wls] of Object.entries(this.#spwStates)) {
-            if(wls.points.length) {
-                continue
-            }
-            if(wls.nextPoint === null) {
-                continue
-            }
-            needPointsAround.add(wls.nextPoint)
-        }
-
         const allPoints = new Set()
-        for(const [ds, whitelist] of Object.entries(sensorPointWhitelist)) {
+        for(const whitelist of Object.values(sensorPointWhitelist)) {
             for(const p of whitelist) {
                 allPoints.add(p)
             }
         }
-        const npa = [...needPointsAround].sort((a, b) => a - b)
-        const ap = [...allPoints].sort((a, b) => a - b)
-        this.#ap = ap
-        let pl = ap[0]
-        /**
-         * @type {Map<number, [number, number]>}
-         */
-        const pointsAround = new Map()
-        for(const p of npa) {
-            while(ap[0] < p) {
-                pl = ap.shift()
-            }
-            pointsAround.set(p, [pl, ap[1]])
-        }
-        this.#pointsAround = pointsAround
+        this.#zeroBoundPoints = [...allPoints].sort((a, b) => a - b)
         console.log("Initial points", sensorPointWhitelist)
         this.#getNextZeroPoint()
         this.#getNextSpanPoint()
