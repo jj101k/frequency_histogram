@@ -146,8 +146,9 @@ class HistogramDeltasNoiseReduced {
                     console.log(spwState.nextPoint, spwState.points)
                     throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
                 }
+                const after = this.#ap[1]
                 // We have a high point only
-                return {lastY: zeroPoint.y - (this.#ap[0] - zeroPoint.y), nextY: this.#ap[0]}
+                return {lastY: zeroPoint.y - (after - zeroPoint.y), nextY: after}
             }
             // Otherwise, we have a low point at least.
             while (this.#ap[1] < zeroPoint.y) {

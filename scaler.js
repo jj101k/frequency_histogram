@@ -105,6 +105,10 @@ class SvgPathRenderer {
      * @param {{x: number, y: number}} pos
      */
     line(pos) {
+        if(Number.isNaN(pos.x) || Number.isNaN(pos.y)) {
+            console.error(pos)
+            throw new Error("NaN position")
+        }
         this.#compiledPath += ` L ${pos.x} ${pos.y}`
         this.#fit(pos)
     }
@@ -114,6 +118,10 @@ class SvgPathRenderer {
      * @param {{x: number, y: number}} pos
      */
     moveTo(pos) {
+        if(Number.isNaN(pos.x) || Number.isNaN(pos.y)) {
+            console.error(pos)
+            throw new Error("NaN position")
+        }
         this.#compiledPath += ` M ${pos.x} ${pos.y}`
         this.#fit(pos)
     }
@@ -216,6 +224,10 @@ class Scaler {
      */
     renderValuePoints(values, rescale, pathRenderer, firstPos) {
         let lastPos = firstPos
+        if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
+            console.error(firstPos)
+            throw new Error("First position is NaN")
+        }
         for (const d of values) {
             const y = this.displayY(d) * rescale
             const x = this.displayX(d)
@@ -323,6 +335,10 @@ class FrequencyScaler extends Scaler {
      */
     renderValuePoints(values, rescale, pathRenderer, firstPos) {
         let lastPos = firstPos
+        if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
+            console.error(firstPos)
+            throw new Error("First position is NaN")
+        }
         const renderSquare = values.length < FrequencyScaler.renderSquareLimit
         if (renderSquare) {
             for (const d of values) {
@@ -447,6 +463,10 @@ class HistogramScaler extends Scaler {
      */
     renderValuePoints(values, rescale, pathRenderer, firstPos) {
         let lastPos = firstPos
+        if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
+            console.error(firstPos)
+            throw new Error("First position is NaN")
+        }
         // These are always discrete
         for (const d of values) {
             const x = this.displayX(d)
@@ -541,6 +561,10 @@ class RawScalerOverlap extends RawScaler {
      */
     renderValuePoints(values, rescale, pathRenderer, firstPos) {
         let lastPos = firstPos
+        if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
+            console.error(firstPos)
+            throw new Error("First position is NaN")
+        }
         for (const d of values) {
             const x = this.displayX(d)
             const y = this.displayY(d) * rescale
