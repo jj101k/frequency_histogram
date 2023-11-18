@@ -7,26 +7,9 @@
  */
 class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
     /**
-     * @type {{y: number, dF: number}[]}
-     */
-    #combinedDeltas = [];
-    /**
-     * @type {{y: number, dF: number} | null}
-     */
-    #nextSpanPoint = null;
-    /**
-     * @type {{y: number, zeroSpan: number, dataSource: number} | null}
-     */
-    #nextZeroPoint = null;
-
-    /**
      * @type {Record<number, SensorWhitelistState>}
      */
     #spwStates
-    /**
-     *
-     */
-    #spanPoints
     /**
      * This is where a zero-width point could fit. This will decrease in size as
      * points are enumerated.
@@ -35,59 +18,13 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
     /**
      * @type {{y: number, dF: number}[]}
      */
-    #zeroDeltas = [];
-    /**
-     *
-     */
-    #zeroDeltaSpan
-    /**
-     *
-     */
-    #zeroWidthPoints
-
-    /**
-     *
-     * @param {{y: number, dF: number}[]} values
-     */
-    #addDeltas(...values) {
-        if (!values.length) {
-            return 0
-        }
-        let vL = this.#combinedDeltas[this.#combinedDeltas.length - 1]
-        let added = 0
-        if (!vL) {
-            vL = values[0]
-            values.shift()
-            this.#combinedDeltas.push(vL)
-            added++
-        }
-        for (const v of values) {
-            if (v.y == vL.y) {
-                vL.dF += v.dF
-            } else {
-                this.#combinedDeltas.push(v)
-                added++
-                vL = v
-            }
-        }
-        return added
-    }
-
-    /**
-     *
-     */
-    #addNextSpanPoint() {
-        if (this.#nextSpanPoint) {
-            this.#addDeltas(this.#nextSpanPoint)
-            this.#getNextSpanPoint()
-        }
-    }
+    #zeroDeltas = []
 
     /**
      *
      */
     #addZeroPointFull() {
-        const zeroPoint = this.#nextZeroPoint
+        const zeroPoint = this.nextZeroPoint
         if (!zeroPoint) {
             throw new Error("Internal error")
         }
@@ -99,21 +36,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
         ]
         // Now we have the answer we can push the values
         this.#zeroDeltas.push(lowZeroPoint, highZeroPoint)
-        this.#getNextZeroPoint()
-    }
-
-    /**
-     *
-     */
-    #getNextSpanPoint() {
-        this.#nextSpanPoint = this.#shiftSpanPoints()
-    }
-
-    /**
-     *
-     */
-    #getNextZeroPoint() {
-        this.#nextZeroPoint = this.#shiftZeroPoints()
+        this.getNextZeroPoint()
     }
 
     /**
@@ -181,38 +104,29 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
         return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, spwState.points[0])
     }
 
-    /**
-     *
-     * @returns
-     */
-    #shiftSpanPoints() {
-        const v0 = this.#spanPoints.shift()
-        if (!v0) {
-            return null
+    buildCombined() {
+        // We do _two_ passes here:
+        // One for the zero points -> temp
+        while (this.nextZeroPoint) {
+            this.#addZeroPointFull()
         }
-        const out = { ...v0 }
-        while (this.#spanPoints.length && this.#spanPoints[0].y == v0.y) {
-            out.dF += this.#spanPoints[0].dF
-            this.#spanPoints.shift()
-        }
-        return out
-    }
 
-    /**
-     *
-     * @returns
-     */
-    #shiftZeroPoints() {
-        const v0 = this.#zeroWidthPoints.shift()
-        if (!v0) {
-            return null
+        this.#zeroDeltas.sort((a, b) => a.y - b.y)
+
+        // Then one for the nonzero points + <- temp
+        while (this.nextSpanPoint) {
+            const nsp = this.nextSpanPoint
+            const i = this.#zeroDeltas.findIndex(d => d.y > nsp.y)
+            if (i < 0) {
+                // This means all remaining zero deltas are <= nsp.y
+                this.addDeltas(...this.#zeroDeltas)
+                this.#zeroDeltas = []
+            } else {
+                this.addDeltas(...this.#zeroDeltas.slice(0, i))
+                this.#zeroDeltas = this.#zeroDeltas.slice(i)
+            }
+            this.addNextSpanPoint()
         }
-        const out = { ...v0 }
-        while (this.#zeroWidthPoints.length && this.#zeroWidthPoints[0].y == v0.y) {
-            out.zeroSpan += this.#zeroWidthPoints[0].zeroSpan
-            this.#zeroWidthPoints.shift()
-        }
-        return out
     }
 
     /**
@@ -223,10 +137,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
      * @param {Record<number, Set<number>>} sensorPointWhitelist
      */
     constructor(deltas, zeroDeltaSpan, zeroWidthPoints, sensorPointWhitelist) {
-        super()
-        this.#spanPoints = deltas
-        this.#zeroDeltaSpan = zeroDeltaSpan
-        this.#zeroWidthPoints = zeroWidthPoints
+        super(deltas, zeroDeltaSpan, zeroWidthPoints)
         this.#spwStates = Object.fromEntries(
             Object.entries(sensorPointWhitelist).map(([ds, whitelist]) => [ds, new SensorWhitelistState(whitelist)])
         )
@@ -238,37 +149,5 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
         }
         this.#zeroBoundPoints = [...allPoints].sort((a, b) => a - b)
         console.log("Initial points", sensorPointWhitelist)
-        this.#getNextZeroPoint()
-        this.#getNextSpanPoint()
-    }
-
-    /**
-     * This provides the deltas with all values with the same y value combined.
-     */
-    get combined() {
-        // We do _two_ passes here:
-        // One for the zero points -> temp
-        while (this.#nextZeroPoint) {
-            this.#addZeroPointFull()
-        }
-
-        this.#zeroDeltas.sort((a, b) => a.y - b.y)
-
-        // Then one for the nonzero points + <- temp
-        while (this.#nextSpanPoint) {
-            const nsp = this.#nextSpanPoint
-            const i = this.#zeroDeltas.findIndex(d => d.y > nsp.y)
-            if (i < 0) {
-                // This means all remaining zero deltas are <= nsp.y
-                this.#addDeltas(...this.#zeroDeltas)
-                this.#zeroDeltas = []
-            } else {
-                this.#addDeltas(...this.#zeroDeltas.slice(0, i))
-                this.#zeroDeltas = this.#zeroDeltas.slice(i)
-            }
-            this.#addNextSpanPoint()
-        }
-
-        return { combinedDeltas: this.#combinedDeltas, zeroDeltaSpan: this.#zeroDeltaSpan }
     }
 }
