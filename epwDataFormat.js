@@ -1,11 +1,7 @@
 // Originally from "Auxiliary Programs" on the EnergyPlus web site
 
 //@ts-check
-
-/**
- * @typedef {{units?: string, minimum?: number, maximum?: number} & ({missing:
-     * number} | {missingGreaterEqual: number})} numberOptions
- */
+/// <reference path="types.d.ts" />
 
 /**
  * @abstract
@@ -270,6 +266,13 @@ class EpwNamedConstrainedNumberField extends EpwNamedNumberField {
 
     get expectsExponentialFrequency() {
         return ["Cd/m2", "lux", "Wh/m2"].includes(this.units ?? "")
+    }
+
+    /**
+     *
+     */
+    get options() {
+        return this.#options
     }
 
     /**

@@ -1,3 +1,4 @@
+//@ts-check
 /// <reference path="types.d.ts" />
 
 /**
@@ -8,6 +9,14 @@ class HistogramDeltasAny {
      * @type {{y: number, dF: number}[]}
      */
     #combinedDeltas = []
+    /**
+     *
+     */
+    #maximum
+    /**
+     *
+     */
+    #minimum
     /**
      *
      */
@@ -136,7 +145,12 @@ class HistogramDeltasAny {
      * @returns
      */
     afterPoint(lastY, current, nextY = undefined) {
-        return nextY ?? (current + (current - lastY))
+        const after = nextY ?? (current + (current - lastY))
+        if(this.#maximum !== undefined) {
+            return Math.min(this.#maximum, after)
+        } else {
+            return after
+        }
     }
 
     /**
@@ -146,7 +160,12 @@ class HistogramDeltasAny {
      * @param {number} nextY
      */
     beforePoint(current, nextY) {
-        return current - (nextY - current)
+        const before = current - (nextY - current)
+        if(this.#minimum !== undefined) {
+            return Math.max(this.#minimum, before)
+        } else {
+            return before
+        }
     }
 
     /**
@@ -205,12 +224,15 @@ class HistogramDeltasAny {
     /**
      *
      * @param {DeltaInfo} deltaInfo
+     * @param {numberOptions | undefined} numberOptions
      */
-    constructor(deltaInfo) {
+    constructor(deltaInfo, numberOptions) {
         this.#spanPoints = deltaInfo.deltas
         this.zeroDeltaSpan = deltaInfo.zeroDeltaSpan
         this.#zeroWidthPoints = deltaInfo.zeroWidthPoints
         this.getNextZeroPoint()
         this.#getNextSpanPoint()
+        this.#maximum = numberOptions?.maximum
+        this.#minimum = numberOptions?.minimum
     }
 }

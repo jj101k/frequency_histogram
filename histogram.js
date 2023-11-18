@@ -140,10 +140,11 @@ class Histogram {
             this.#deltaInfo = this.getDeltas()
         }
         const orderedFrequencies = this.#noiseReduction ? this.#getOrderedFrequencies(this.rawValues) : undefined
+        const numberOptions = (this.#fieldInfo.field instanceof EpwNamedConstrainedNumberField) ? this.#fieldInfo.field.options : undefined
         if(orderedFrequencies && Object.keys(orderedFrequencies).length > 1) {
-            return new HistogramDeltasNoiseReduced(this.#deltaInfo, this.#getAcceptedValues(orderedFrequencies)).combined
+            return new HistogramDeltasNoiseReduced(this.#deltaInfo, numberOptions, this.#getAcceptedValues(orderedFrequencies)).combined
         } else {
-            return new HistogramDeltas(this.#deltaInfo).combined
+            return new HistogramDeltas(this.#deltaInfo, numberOptions).combined
         }
     }
 

@@ -132,10 +132,11 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
     /**
      *
      * @param {DeltaInfo} deltaInfo
+     * @param {numberOptions | undefined} numberOptions
      * @param {Record<number, Set<number>>} sensorPointWhitelist
      */
-    constructor(deltaInfo, sensorPointWhitelist) {
-        super(deltaInfo)
+    constructor(deltaInfo, numberOptions, sensorPointWhitelist) {
+        super(deltaInfo, numberOptions)
         this.#spwStates = Object.fromEntries(
             Object.entries(sensorPointWhitelist).map(([ds, whitelist]) => [ds, new SensorWhitelistState(whitelist)])
         )
