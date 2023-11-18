@@ -4,14 +4,14 @@
 /// <reference path="histogramDeltas.js" />
 /// <reference path="histogramDeltasNoiseReduced.js" />
 /// <reference path="scaler.js" />
+/// <reference path="types.d.ts" />
 
 /**
  *
  */
 class Histogram {
     /**
-     * @type {{deltas: {y: number, dF: number, zeroSpan?: undefined}[], zeroWidthPoints: {y: number,
-     * zeroSpan: number, dataSource: number}[], zeroDeltaSpan: number} | undefined}
+     * @type {DeltaInfo | undefined}
      */
     #deltaInfo
 
@@ -141,10 +141,9 @@ class Histogram {
         }
         const orderedFrequencies = this.#noiseReduction ? this.#getOrderedFrequencies(this.rawValues) : undefined
         if(orderedFrequencies && Object.keys(orderedFrequencies).length > 1) {
-            return new HistogramDeltasNoiseReduced(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints,
-                this.#getAcceptedValues(orderedFrequencies)).combined
+            return new HistogramDeltasNoiseReduced(this.#deltaInfo, this.#getAcceptedValues(orderedFrequencies)).combined
         } else {
-            return new HistogramDeltas(this.#deltaInfo.deltas, this.#deltaInfo.zeroDeltaSpan, this.#deltaInfo.zeroWidthPoints).combined
+            return new HistogramDeltas(this.#deltaInfo).combined
         }
     }
 

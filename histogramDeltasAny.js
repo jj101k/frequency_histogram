@@ -1,3 +1,5 @@
+/// <reference path="types.d.ts" />
+
 /**
  * @abstract
  */
@@ -202,14 +204,12 @@ class HistogramDeltasAny {
 
     /**
      *
-     * @param {{y: number, dF: number}[]} deltas
-     * @param {number} zeroDeltaSpan
-     * @param {{y: number, zeroSpan: number, dataSource: number}[]} zeroWidthPoints
+     * @param {DeltaInfo} deltaInfo
      */
-    constructor(deltas, zeroDeltaSpan, zeroWidthPoints) {
-        this.#spanPoints = deltas
-        this.zeroDeltaSpan = zeroDeltaSpan
-        this.#zeroWidthPoints = zeroWidthPoints
+    constructor(deltaInfo) {
+        this.#spanPoints = deltaInfo.deltas
+        this.zeroDeltaSpan = deltaInfo.zeroDeltaSpan
+        this.#zeroWidthPoints = deltaInfo.zeroWidthPoints
         this.getNextZeroPoint()
         this.#getNextSpanPoint()
     }
