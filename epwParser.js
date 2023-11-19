@@ -142,6 +142,10 @@ class EpwParser {
 
         if(runs * loggableRunLength < sampleSize) {
             console.log("Dumping run lengths")
+            /**
+             * @type {Record<number,number>}
+             */
+            let runLengths = {}
             let runs = 0
             /**
              * @type {number | null | undefined}
@@ -150,10 +154,12 @@ class EpwParser {
             let c = 0
             for(const ri of r) {
                 if(ri.y !== l) {
-                    console.log(`${l}: ${c}`)
+                    if(l !== null && l !== undefined) {
+                        runLengths[l] = c
+                    }
                     runs++
                     if(runs > maxLoggableRuns) {
-                        console.error("Too many runs!")
+                        console.warn("Too many runs to dump fully")
                         break
                     }
                     l = ri.y
@@ -162,7 +168,10 @@ class EpwParser {
                     c++
                 }
             }
-            console.log(`${l}: ${c}`)
+            if(l !== null && l !== undefined) {
+                runLengths[l] = c
+            }
+            console.log(runLengths)
         } else {
             console.log("Raw values", r)
         }
