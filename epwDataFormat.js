@@ -225,6 +225,14 @@ class EpwNamedNumberField extends EpwNamedField {
     }
 
     /**
+     * @abstract
+     * @type {boolean}
+     */
+    get isScalar() {
+        throw new Error("Not implemented")
+    }
+
+    /**
      * @type {string | undefined}
      */
     get units() {
@@ -241,9 +249,88 @@ class EpwNamedNumberField extends EpwNamedField {
 }
 
 /**
+ * This is a number field, but not scalar so cannot be interpolated or reinterpreted.
+ */
+class EpwNamedNonScalarNumberField extends EpwNamedNumberField {
+    get isScalar() {
+        return false
+    }
+    getParser() {
+        return this.offset !== undefined ?
+            new EpwPlainNumberField(this.offset) :
+            undefined
+    }
+}
+
+/**
+ * This is a number field, and it is scalar but it's part of a component number
+ * set and greater than the unit component. For the value itself, this means it
+ * contextually can't be reinterpreted as some more precise value. Between
+ * values, you can't interpret any specific relationship because it's already
+ * almost all the way to the second number at the time.
+ */
+class EpwNamedGreaterUnitComponentNumberField extends EpwNamedNumberField {
+    get isScalar() {
+        return true
+    }
+    getParser() {
+        return this.offset !== undefined ?
+            new EpwPlainNumberField(this.offset) :
+            undefined
+    }
+}
+
+/**
+ * This is a number field, and it is scalar but it's part of a component number
+ * set and less than the unit component. This can be reinterpreted somewhat
+ * usefully. In most cases this can't be meaningfully interpolated between points.
+ */
+class EpwNamedLesserUnitComponentNumberField extends EpwNamedNumberField {
+    get isScalar() {
+        return true
+    }
+    getParser() {
+        return this.offset !== undefined ?
+            new EpwPlainNumberField(this.offset) :
+            undefined
+    }
+}
+
+/**
+ * This is the unit part of a component field. This can't helpfully be
+ * reintepreted, but can be meaningfully interpolated between points.
+ */
+class EpwNamedUnitComponentNumberField extends EpwNamedNumberField {
+    get isScalar() {
+        return true
+    }
+    /**
+     *
+     */
+    limit
+    /**
+     *
+     * @param {string} name
+     * @param {number} limit Since this is a unit, this describes the upper bound.
+     */
+    constructor(name, limit) {
+        super(name)
+        this.limit = limit
+    }
+    getParser() {
+        return this.offset !== undefined ?
+            new EpwPlainNumberField(this.offset) :
+            undefined
+    }
+}
+
+/**
  *
  */
 class EpwNamedSimpleNumberField extends EpwNamedNumberField {
+    get isScalar() {
+        return true
+    }
     getParser() {
         return this.offset !== undefined ?
             new EpwPlainNumberField(this.offset) :
@@ -255,6 +342,9 @@ class EpwNamedSimpleNumberField extends EpwNamedNumberField {
  *
  */
 class EpwNamedConstrainedNumberField extends EpwNamedNumberField {
+    get isScalar() {
+        return true
+    }
     /**
      *
      */
@@ -321,11 +411,38 @@ const EpwFields = (() => {
     /**
      *
      * @param {string} name
+     * @param {number} limit
      * @returns
      */
-    function PlainNumber(name) {
-        return new EpwNamedSimpleNumberField(name)
+    function UnitComponentNumber(name, limit) {
+        return new EpwNamedUnitComponentNumberField(name, limit)
     }
+    /**
+     *
+     * @param {string} name
+     * @returns
+     */
+    function GreaterUnitComponentNumber(name) {
+        return new EpwNamedGreaterUnitComponentNumberField(name)
+    }
+    /**
+     *
+     * @param {string} name
+     * @returns
+     */
+    function LesserUnitComponentNumber(name) {
+        return new EpwNamedLesserUnitComponentNumberField(name)
+    }
+
+    /**
+     *
+     * @param {string} name
+     * @returns
+     */
+    function NonScalarNumber(name) {
+        return new EpwNamedNonScalarNumberField(name)
+    }
+
 
     /**
      *
@@ -347,11 +464,11 @@ const EpwFields = (() => {
     }
 
     const fields = [
-        PlainNumber("Year"),
-        PlainNumber("Month"),
-        PlainNumber("Day"),
-        PlainNumber("Hour"),
-        PlainNumber("Minute"),
+        GreaterUnitComponentNumber("Year"),
+        GreaterUnitComponentNumber("Month"),
+        GreaterUnitComponentNumber("Day"),
+        UnitComponentNumber("Hour", 24),
+        LesserUnitComponentNumber("Minute"),
         PlainText("Data Source and Uncertainty Flags"),
         ConstrainedNumber("Dry Bulb Temperature", { units: "C", minimum: -70, maximum: 70, missing: 99.9 }),
         ConstrainedNumber("Dew Point Temperature", { units: "C", minimum: -70, maximum: 70, missing: 99.9 }),
@@ -372,9 +489,9 @@ const EpwFields = (() => {
         ConstrainedNumber("Total Sky Cover", { missing: 99, minimum: 0, maximum: 10 }),
         ConstrainedNumber("Opaque Sky Cover", { missing: 99, minimum: 0, maximum: 10 }),
         ConstrainedNumber("Visibility", { units: "km", missing: 9999, minimum: 0 /* Assumed */ }),
-        ConstrainedNumber("Ceiling Height", { units: "m", missing: 99999, minimum: 0 /* Assumed */ }),
-        PlainNumber("Present Weather Observation"),
-        PlainNumber("Present Weather Codes"),
+        ConstrainedNumber("Ceiling Height", { units: "m", missing: 99999, minimum: 0 /* Assumed */, enumerated: [77777, 88888] /* Known special values */ }),
+        NonScalarNumber("Present Weather Observation"),
+        NonScalarNumber("Present Weather Codes"),
         ConstrainedNumber("Precipitable Water", { units: "mm", missing: 999, minimum: 0 /* Assumed */ }),
         ConstrainedNumber("Aerosol Optical Depth", { units: "thousandths", missing: .999, minimum: 0 /* Assumed */ }),
         ConstrainedNumber("Snow Depth", { units: "cm", missing: 999, minimum: 0 /* Assumed */ }),

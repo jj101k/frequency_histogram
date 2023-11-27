@@ -19,4 +19,4 @@ interface DeltaInfo {
 /**
  *
  */
-type numberOptions = {units?: string, minimum?: number, maximum?: number} & ({missing: number} | {missingGreaterEqual: number})
+type numberOptions = {units?: string, minimum?: number, maximum?: number, enumerated?: number[]} & ({missing: number} | {missingGreaterEqual: number})

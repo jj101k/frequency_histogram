@@ -247,7 +247,11 @@ class HistogramRender {
             case GraphType.PlainHistogram:
                 return this.renderPlain()
             case GraphType.Histogram:
-                return this.renderDelta()
+                if(this.#field.isScalar) {
+                    return this.renderDelta()
+                } else {
+                    return this.renderPlain()
+                }
         }
     }
 
