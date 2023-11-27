@@ -417,6 +417,14 @@ class Histogram {
             orderedFrequencies.push(...frequencies)
         }
         orderedFrequencies.sort((a, b) => a.y - b.y)
+        if(orderedFrequencies.length >= 2) {
+            const first = orderedFrequencies[0]
+            const last = orderedFrequencies[orderedFrequencies.length - 1]
+            const estimatedDataPoints = (last.y - first.y) / expectedMinDeltaY
+            if(estimatedDataPoints > 1_000_000) {
+                throw new Error(`Too many data points to use (estimated ${estimatedDataPoints})`)
+            }
+        }
 
         /**
          * @type {typeof orderedFrequencies}
