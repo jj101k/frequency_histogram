@@ -438,10 +438,12 @@ class Histogram {
             addFrequency(frequency)
             if(!orderedFrequencies[+i+1]) break
             const nextY = orderedFrequencies[+i+1].y
-            let thisY = frequency.y
-            while(thisY + expectedMinDeltaY < nextY) {
-                thisY += expectedMinDeltaY
-                addFrequency({y: thisY, f: 0})
+            if(frequency.y + expectedMinDeltaY < nextY) {
+                // First point: add min delta
+                addFrequency({y: frequency.y + expectedMinDeltaY, f: 0})
+                // Last point: add _n_ * min delta, where y+n*m <= ny
+                const pointsToOverlap = Math.floor((nextY - frequency.y) / expectedMinDeltaY)
+                addFrequency({y: frequency.y + pointsToOverlap * expectedMinDeltaY, f: 0})
             }
         }
 
