@@ -417,27 +417,31 @@ class Histogram {
             orderedFrequencies.push(...frequencies)
         }
         orderedFrequencies.sort((a, b) => a.y - b.y)
-        if(orderedFrequencies.length >= 2) {
-            const first = orderedFrequencies[0]
-            const last = orderedFrequencies[orderedFrequencies.length - 1]
-            const estimatedDataPoints = (last.y - first.y) / expectedMinDeltaY
-            if(estimatedDataPoints > 1_000_000) {
-                throw new Error(`Too many data points to use (estimated ${estimatedDataPoints})`)
-            }
-        }
 
         /**
          * @type {typeof orderedFrequencies}
          */
         const filledFrequencies = []
+        let l = 0
+        /**
+         *
+         * @param {typeof orderedFrequencies[0]} f
+         */
+        const addFrequency = (f) => {
+            l++
+            if(l >= 1_000_000) {
+                throw new Error(`Too many data points to use (${l}+)`)
+            }
+            filledFrequencies.push(f)
+        }
         for(const [i, frequency] of Object.entries(orderedFrequencies)) {
-            filledFrequencies.push(frequency)
+            addFrequency(frequency)
             if(!orderedFrequencies[+i+1]) break
             const nextY = orderedFrequencies[+i+1].y
             let thisY = frequency.y
             while(thisY + expectedMinDeltaY < nextY) {
                 thisY += expectedMinDeltaY
-                filledFrequencies.push({y: thisY, f: 0})
+                addFrequency({y: thisY, f: 0})
             }
         }
 
