@@ -441,8 +441,8 @@ class Histogram {
             if(frequency.y + expectedMinDeltaY < nextY) {
                 // First point: add min delta
                 addFrequency({y: frequency.y + expectedMinDeltaY, f: 0})
-                // Last point: add _n_ * min delta, where y+n*m <= ny
-                const pointsToOverlap = Math.floor((nextY - frequency.y) / expectedMinDeltaY)
+                // Last point: add _n_ * min delta, where y+n*m < ny
+                const pointsToOverlap = Math.floor((nextY - frequency.y) / expectedMinDeltaY - 0.0001)
                 addFrequency({y: frequency.y + pointsToOverlap * expectedMinDeltaY, f: 0})
             }
         }
