@@ -130,7 +130,149 @@ class SvgPathRenderer {
 /**
  * @template F
  */
+class ValueScaler {
+    /**
+     *
+     * @param {F[]} values
+     */
+    prepare(values) {
+    }
+
+    /**
+     * @abstract
+     *
+     * @param {F} d
+     * @returns {number}
+     */
+    scale(d) {
+        throw new Error("Not implemented")
+    }
+}
+
+/**
+ * @extends {ValueScaler<{f: number}>}
+ */
+class FInverseScaler extends ValueScaler {
+    /**
+     *
+     * @param {{f: number}} d
+     * @returns {number}
+     */
+    scale(d) {
+        return -d.f
+    }
+}
+
+/**
+ * @extends {ValueScaler<{f: number}>}
+ */
+class FInverseLogScaler extends ValueScaler {
+    /**
+     *
+     * @param {{f: number}} d
+     * @returns {number}
+     */
+    scale(d) {
+        // 0 may legitimately appear in the middle of exponential frequency sets
+        return -Math.log(d.f + 0.001)
+    }
+}
+
+/**
+ * @extends {ValueScaler<{x: number}>}
+ */
+class XLinearScaler extends ValueScaler {
+    /**
+     *
+     * @param {{x: number}} d
+     * @returns {number}
+     */
+    scale(d) {
+        return d.x
+    }
+}
+
+/**
+ * @extends {ValueScaler<{x: number}>}
+ */
+class XModulusScaler extends ValueScaler {
+    /**
+     *
+     */
+    #modulus
+    /**
+     *
+     * @param {number} modulus
+     */
+    constructor(modulus) {
+        super()
+        this.#modulus = modulus
+    }
+    /**
+     *
+     * @param {{x: number}} d
+     * @returns {number}
+     */
+    scale(d) {
+        return d.x % this.#modulus
+    }
+}
+
+/**
+ * @extends {ValueScaler<{y: number}>}
+ */
+class YLinearScaler extends ValueScaler {
+    /**
+     *
+     * @param {{y: number}} d
+     * @returns {number}
+     */
+    scale(d) {
+        return d.y
+    }
+}
+
+/**
+ * @extends {ValueScaler<HistogramDatum>}
+ */
+class YLogScaler extends ValueScaler {
+    /**
+     *
+     */
+    #logOffset = 0
+    /**
+     *
+     * @param {HistogramDatum[]} values
+     */
+    prepare(values) {
+        this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
+    }
+    /**
+     *
+     * @param {HistogramDatum} d
+     * @returns {number}
+     */
+    scale(d) {
+        return Math.log(d.y + this.#logOffset)
+    }
+}
+
+/**
+ * @template F
+ */
 class Scaler {
+    /**
+     * @abstract
+     * @type {ValueScaler<F>}
+     */
+    xScaler
+
+    /**
+     * @abstract
+     * @type {ValueScaler<F>}
+     */
+    yScaler
+
     /**
      * @abstract
      *
@@ -138,7 +280,7 @@ class Scaler {
      * @returns {number}
      */
     displayX(d) {
-        throw new Error("Not implemented")
+        return this.xScaler.scale(d)
     }
 
     /**
@@ -148,7 +290,7 @@ class Scaler {
      * @returns {number}
      */
     displayY(d) {
-        throw new Error("Not implemented")
+        return this.yScaler.scale(d)
     }
 
     /**
@@ -187,6 +329,8 @@ class Scaler {
             }
         }
 
+        this.xScaler.prepare(values)
+        this.yScaler.prepare(values)
         this.prepare(values)
 
         const minX = this.displayX(values[0])
@@ -287,33 +431,8 @@ class FrequencyScaler extends Scaler {
         super()
         this.#field = field
         this.#preferLog = preferLog
-    }
-
-    /**
-     *
-     * @param {HistogramDatum} d
-     * @returns
-     */
-    displayX(d) {
-        if(this.#preferLog ?? this.#field.exponentialValues) {
-            return Math.log(d.y + this.#logOffset)
-        } else {
-            return d.y
-        }
-    }
-
-    /**
-     *
-     * @param {HistogramDatum} d
-     * @returns
-     */
-    displayY(d) {
-        if(this.#field.expectsExponentialFrequency) {
-            // 0 may legitimately appear in the middle of exponential frequency sets
-            return -Math.log(d.f + 0.001)
-        } else {
-            return -d.f
-        }
+        this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new YLogScaler() : new YLinearScaler()
+        this.yScaler = this.#field.expectsExponentialFrequency ? new FInverseLogScaler() : new FInverseScaler()
     }
 
     /**
@@ -415,33 +534,8 @@ class HistogramScaler extends Scaler {
         super()
         this.#field = field
         this.#preferLog = preferLog
-    }
-
-    /**
-     *
-     * @param {HistogramDatum} d
-     * @returns
-     */
-    displayX(d) {
-        if(this.#preferLog ?? this.#field.exponentialValues) {
-            return Math.log(d.y + this.#logOffset)
-        } else {
-            return d.y
-        }
-    }
-
-    /**
-     *
-     * @param {HistogramDatum} d
-     * @returns
-     */
-    displayY(d) {
-        if(this.#field.expectsExponentialFrequency) {
-            // 0 may legitimately appear in the middle of exponential frequency sets
-            return -Math.log(d.f + 0.001)
-        } else {
-            return -d.f
-        }
+        this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new YLogScaler() : new YLinearScaler()
+        this.yScaler = this.#field.expectsExponentialFrequency ? new FInverseLogScaler() : new FInverseScaler()
     }
 
     /**
@@ -510,23 +604,8 @@ class HistogramScaler extends Scaler {
  * @extends {Scaler<RawDatum>}
  */
 class RawScaler extends Scaler {
-    /**
-     *
-     * @param {RawDatum} d
-     * @returns
-     */
-    displayX(d) {
-        return d.x
-    }
-
-    /**
-     *
-     * @param {RawDatum} d
-     * @returns
-     */
-    displayY(d) {
-        return d.y
-    }
+    xScaler = new XLinearScaler()
+    yScaler = new YLinearScaler()
 
     /**
      * @param {number} x
@@ -542,14 +621,7 @@ class RawScaler extends Scaler {
  * @extends {RawScaler}
  */
 class RawScalerOverlap extends RawScaler {
-    /**
-     *
-     * @param {RawDatum} d
-     * @returns
-     */
-    displayX(d) {
-        return d.x % 24
-    }
+    xScaler = new XModulusScaler(24)
 
     /**
      *
