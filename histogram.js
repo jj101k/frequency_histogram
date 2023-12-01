@@ -418,6 +418,8 @@ class Histogram {
         }
         orderedFrequencies.sort((a, b) => a.y - b.y)
 
+        console.log(`${orderedFrequencies.length} ordered frequencies found`)
+
         /**
          * @type {typeof orderedFrequencies}
          */
@@ -446,6 +448,8 @@ class Histogram {
                 addFrequency({y: frequency.y + pointsToOverlap * expectedMinDeltaY, f: 0})
             }
         }
+
+        console.log(`${filledFrequencies.length} frequencies emitted`)
 
         return filledFrequencies
     }

@@ -159,7 +159,7 @@ class EpwParser {
                     }
                     runs++
                     if(runs > maxLoggableRuns) {
-                        console.warn("Too many runs to dump fully")
+                        console.warn(`Too many runs to dump fully, will just dump the first ${maxLoggableRuns}`)
                         break
                     }
                     l = ri.y
@@ -175,6 +175,7 @@ class EpwParser {
         } else {
             console.log("Raw values", r)
         }
+        console.log(`${r.length} raw values`)
         return r
     }
 
