@@ -154,8 +154,8 @@ class Scaler {
     /**
      * @protected
      *
-     * @param {*} minX
-     * @param {*} maxX
+     * @param {number} minX
+     * @param {number} maxX
      * @returns
      */
     getStrokeWidth(minX, maxX) {
