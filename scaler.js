@@ -393,7 +393,7 @@ class Scaler {
      * @returns
      */
     getStrokeWidth(minX, maxX) {
-        return (maxX - minX) / 800
+        return (maxX - minX) / 800 // TODO heuristic
     }
 
     /**
@@ -594,7 +594,7 @@ class HistogramScaler extends Scaler {
     #preferLog
 
     getStrokeWidth(minX, maxX) {
-        return 1/20
+        return (maxX - minX) / 800 // TODO heuristic
     }
 
     /**
