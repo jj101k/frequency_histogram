@@ -132,10 +132,64 @@ class SvgPathRenderer {
  */
 class ValueScaler {
     /**
+     * @protected
+     */
+    scaleFactor = 1
+
+    /**
+     * @protected
      *
      * @param {F[]} values
+     * @param {number} [scaleTo]
      */
-    prepare(values) {
+    prepareScale(values, scaleTo) {
+        const {min, max} = this.valueRange(values)
+        const scale = max - min
+        if(scaleTo !== undefined) {
+            this.scaleFactor = scaleTo / scale
+        }
+        return scale
+    }
+
+    /**
+     * @protected
+     *
+     * If there's any state which was set (particularly during preparation),
+     * this resets it.
+     */
+    reset() {
+    }
+
+    /**
+     * @protected
+     *
+     * @param {F[]} values
+     * @returns {{min: number, max: number}}
+     */
+    valueRange(values) {
+        let min = Infinity
+        let max = -Infinity
+        for(const v of values) {
+            const d = this.scale(v)
+            if(d > max) {
+                max = d
+            }
+            if(d < min) {
+                min = d
+            }
+        }
+        this.reset()
+        return {min, max}
+    }
+
+    /**
+     *
+     * @param {F[]} values
+     * @param {number} [scaleTo]
+     * @returns {number}
+     */
+    prepare(values, scaleTo) {
+        return this.prepareScale(values, scaleTo)
     }
 
     /**
@@ -159,7 +213,7 @@ class FInverseScaler extends ValueScaler {
      * @returns {number}
      */
     scale(d) {
-        return -d.f
+        return -d.f * this.scaleFactor
     }
 }
 
@@ -174,7 +228,7 @@ class FInverseLogScaler extends ValueScaler {
      */
     scale(d) {
         // 0 may legitimately appear in the middle of exponential frequency sets
-        return -Math.log(d.f + 0.001)
+        return -Math.log(d.f + 0.001) * this.scaleFactor
     }
 }
 
@@ -188,7 +242,7 @@ class XLinearScaler extends ValueScaler {
      * @returns {number}
      */
     scale(d) {
-        return d.x
+        return d.x * this.scaleFactor
     }
 }
 
@@ -200,6 +254,9 @@ class XModulusScaler extends ValueScaler {
      *
      */
     #modulus
+    valueRange(values) {
+        return {min: 0, max: 23}
+    }
     /**
      *
      * @param {number} modulus
@@ -214,7 +271,7 @@ class XModulusScaler extends ValueScaler {
      * @returns {number}
      */
     scale(d) {
-        return d.x % this.#modulus
+        return d.x % this.#modulus * this.scaleFactor
     }
 }
 
@@ -228,7 +285,7 @@ class YLinearScaler extends ValueScaler {
      * @returns {number}
      */
     scale(d) {
-        return d.y
+        return d.y * this.scaleFactor
     }
 }
 
@@ -243,9 +300,11 @@ class YLogScaler extends ValueScaler {
     /**
      *
      * @param {HistogramDatum[]} values
+     * @param {number} [scaleTo]
      */
-    prepare(values) {
+    prepare(values, scaleTo) {
         this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
+        return this.prepareScale(values, scaleTo)
     }
     /**
      *
@@ -253,7 +312,40 @@ class YLogScaler extends ValueScaler {
      * @returns {number}
      */
     scale(d) {
-        return Math.log(d.y + this.#logOffset)
+        return Math.log(d.y + this.#logOffset) * this.scaleFactor
+    }
+}
+
+/**
+ * @extends {ValueScaler<{y: number}>}
+ */
+class YStaticScaler extends ValueScaler {
+    reset() {
+        this.#value = 1
+    }
+    /**
+     *
+     */
+    #value = 1
+    /**
+     * @type {number | undefined}
+     */
+    #lastY
+    valueRange(values) {
+        return {min: 0, max: values.length - 1}
+    }
+    /**
+     *
+     * @param {{y: number}} d
+     * @returns {number}
+     */
+    scale(d) {
+        if(this.#lastY === undefined) {
+            this.#lastY = d.y
+        } else if(d.y > this.#lastY) {
+            this.#value++
+        }
+        return this.#value * this.scaleFactor
     }
 }
 
@@ -305,14 +397,6 @@ class Scaler {
     }
 
     /**
-     * @protected
-     *
-     * @param {F[]} values
-     */
-    prepare(values) {
-    }
-
-    /**
      *
      * @param {F[]} values
      */
@@ -329,22 +413,21 @@ class Scaler {
             }
         }
 
-        this.xScaler.prepare(values)
-        this.yScaler.prepare(values)
-        this.prepare(values)
+        // The X scaler is fixed - it's whatever it naturally is.
+        const xRange = this.xScaler.prepare(values)
+        // The Y scaler may be rescaled
+        this.yScaler.prepare(values, xRange / 4) // TODO This is a heuristic value
 
         const minX = this.displayX(values[0])
         const maxX = this.displayX(values[values.length - 1])
 
-        const rescale = (maxX - minX) / ((trueMaxF - trueMinF) * 4)
-
-        const firstPos = { x: this.displayX(values[0]), y: this.displayY(values[0]) * rescale }
+        const firstPos = { x: this.displayX(values[0]), y: this.displayY(values[0]) }
         const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
 
         // Last point is handled specially.
         const tail = values.pop()
 
-        const lastPos = this.renderValuePoints(values, rescale, pathRenderer, firstPos)
+        const lastPos = this.renderValuePoints(values, pathRenderer, firstPos)
 
         // Always a horizontal line to the last point, for symmetry with the first
         if(tail) {
@@ -361,19 +444,18 @@ class Scaler {
     /**
      *
      * @param {F[]} values
-     * @param {number} rescale
      * @param {SvgPathRenderer} pathRenderer
      * @param {{x: number, y: number}} firstPos
      * @returns
      */
-    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+    renderValuePoints(values, pathRenderer, firstPos) {
         let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
             throw new Error("First position is NaN")
         }
         for (const d of values) {
-            const y = this.displayY(d) * rescale
+            const y = this.displayY(d)
             const x = this.displayX(d)
             pathRenderer.line({ x, y })
             lastPos = { x, y: y }
@@ -436,23 +518,13 @@ class FrequencyScaler extends Scaler {
     }
 
     /**
-     * @protected
      *
      * @param {HistogramDatum[]} values
-     */
-    prepare(values) {
-        this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
-    }
-
-    /**
-     *
-     * @param {HistogramDatum[]} values
-     * @param {number} rescale
      * @param {SvgPathRenderer} pathRenderer
      * @param {{x: number, y: number}} firstPos
      * @returns
      */
-    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+    renderValuePoints(values, pathRenderer, firstPos) {
         let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
@@ -462,7 +534,7 @@ class FrequencyScaler extends Scaler {
         if (renderSquare) {
             for (const d of values) {
                 const x = this.displayX(d)
-                const y = this.displayY(d) * rescale
+                const y = this.displayY(d)
                 pathRenderer.line({ x, y: lastPos.y })
                 pathRenderer.line({ x, y })
                 lastPos = { x, y }
@@ -470,7 +542,7 @@ class FrequencyScaler extends Scaler {
         } else {
             for (const d of values) {
                 const x = this.displayX(d)
-                const y = this.displayY(d) * rescale
+                const y = this.displayY(d)
                 pathRenderer.line({ x, y })
                 lastPos = { x, y }
             }
@@ -534,28 +606,22 @@ class HistogramScaler extends Scaler {
         super()
         this.#field = field
         this.#preferLog = preferLog
-        this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new YLogScaler() : new YLinearScaler()
+        if(this.#field.isScalar) {
+            this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new YLogScaler() : new YLinearScaler()
+        } else {
+            this.xScaler = new YStaticScaler()
+        }
         this.yScaler = this.#field.expectsExponentialFrequency ? new FInverseLogScaler() : new FInverseScaler()
     }
 
     /**
-     * @protected
      *
      * @param {HistogramDatum[]} values
-     */
-    prepare(values) {
-        this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
-    }
-
-    /**
-     *
-     * @param {HistogramDatum[]} values
-     * @param {number} rescale
      * @param {SvgPathRenderer} pathRenderer
      * @param {{x: number, y: number}} firstPos
      * @returns
      */
-    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+    renderValuePoints(values, pathRenderer, firstPos) {
         let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
@@ -564,7 +630,7 @@ class HistogramScaler extends Scaler {
         // These are always discrete
         for (const d of values) {
             const x = this.displayX(d)
-            const y = this.displayY(d) * rescale
+            const y = this.displayY(d)
             pathRenderer.addPathFrom({x, y: 0})
             pathRenderer.line({ x, y })
             lastPos = { x, y }
@@ -626,12 +692,11 @@ class RawScalerOverlap extends RawScaler {
     /**
      *
      * @param {RawDatum[]} values
-     * @param {number} rescale
      * @param {SvgPathRenderer} pathRenderer
      * @param {{x: number, y: number}} firstPos
      * @returns
      */
-    renderValuePoints(values, rescale, pathRenderer, firstPos) {
+    renderValuePoints(values, pathRenderer, firstPos) {
         let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
@@ -639,7 +704,7 @@ class RawScalerOverlap extends RawScaler {
         }
         for (const d of values) {
             const x = this.displayX(d)
-            const y = this.displayY(d) * rescale
+            const y = this.displayY(d)
             if(x < lastPos.x) {
                 pathRenderer.addPathFrom({x, y})
             }
