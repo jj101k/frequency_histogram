@@ -318,7 +318,7 @@ class HistogramRender {
             console.log(frequencies)
         }
 
-        const scaler = new HistogramScaler(this.#field)
+        const scaler = new HistogramScaler(this.#field, this.#preferLog)
 
         const { compiledPaths, box, strokeWidth } = scaler.renderValues(frequencies)
 
@@ -353,7 +353,7 @@ class HistogramRender {
             console.log(rawValues)
         }
 
-        const scaler = new RawScaler(this.#field)
+        const scaler = new RawScaler()
 
         const { compiledPaths, box, strokeWidth } = scaler.renderValues(rawValues)
 
@@ -386,7 +386,7 @@ class HistogramRender {
             console.log(rawValues)
         }
 
-        const scaler = new RawScalerOverlap(this.#field)
+        const scaler = new RawScalerOverlap()
 
         const { compiledPaths, box, strokeWidth } = scaler.renderValues(rawValues)
 
