@@ -7,9 +7,21 @@
  *
  */
 const GraphType = {
+    /**
+     * Continuous histogram, ie the frequency scale of the values
+     */
     Histogram: 1,
+    /**
+     * Discrete histogram, ie the frequency of the points
+     */
     PlainHistogram: 0,
+    /**
+     * The literal data points
+     */
     Raw: -1,
+    /**
+     * The data points by hour but not date
+     */
     RawDayOverlap: -2,
 }
 
@@ -267,7 +279,7 @@ class HistogramRender {
     }
 
     /**
-     *
+     * Renders the continuous frequency of values (scalar only).
      */
     renderDelta() {
         const histogram = this.#prepareHistogram()
@@ -304,7 +316,8 @@ class HistogramRender {
     }
 
     /**
-     *
+     * Renders the frequency of literal values, suitable for non-scalar values
+     * as well as cases where you just want to debug it.
      */
     renderPlain() {
         const histogram = this.#prepareHistogram()
@@ -339,7 +352,7 @@ class HistogramRender {
     }
 
     /**
-     *
+     * Render the literal values as they are, from first date to last
      */
     renderRaw() {
         const histogram = this.#prepareHistogram()
@@ -372,7 +385,7 @@ class HistogramRender {
     }
 
     /**
-     *
+     * Render the literal values as they are, by hour.
      */
     renderRawOverlap() {
         const histogram = this.#prepareHistogram()
