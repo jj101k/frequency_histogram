@@ -24,7 +24,7 @@ function main() {
             return this.field.units
         },
     }
-    Frameworker.proxy(retainedData, hr, ["noiseReduction", "period", "debug", "field", "preferLog", "first24", "graphType"],
+    Frameworker.proxy(retainedData, hr, ["noiseReduction", "period", "roundToNearest", "debug", "field", "preferLog", "first24", "graphType"],
         {}, [])
 
     const f = new Frameworker(retainedData, document, {

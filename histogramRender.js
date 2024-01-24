@@ -65,6 +65,11 @@ class HistogramRender {
     #preferLog
 
     /**
+     * @type {boolean}
+     */
+    #roundToNearest
+
+    /**
      *
      * @param {string} box
      * @param {number} strokeWidth
@@ -240,6 +245,20 @@ class HistogramRender {
 
     /**
      *
+     */
+    get roundToNearest() {
+        return this.#roundToNearest
+    }
+
+    set roundToNearest(v) {
+        this.#roundToNearest = v
+        if(this.histogram) {
+            this.render()
+        }
+    }
+
+    /**
+     *
      * @param {HTMLElement} container
      */
     constructor(container) {
@@ -293,9 +312,38 @@ class HistogramRender {
             console.log("Deltas", cumulativeDeltas)
         }
 
+        /**
+         * @type {typeof cumulativeDeltas}
+         */
+        let resampledDeltas
+        if(this.roundToNearest) {
+            resampledDeltas = []
+            /**
+             * @type {typeof cumulativeDeltas[0] | undefined}
+             */
+            let resampledDelta
+            for(const delta of cumulativeDeltas) {
+                // Deltas apply to the value above this one
+                const resampledY = Math.ceil(delta.y)
+                if(resampledDelta?.y === resampledY) {
+                    resampledDelta.f += delta.f
+                } else {
+                    if(resampledDelta) {
+                        resampledDeltas.push(resampledDelta)
+                    }
+                    resampledDelta = {f: delta.f, y: resampledY}
+                }
+            }
+            if(resampledDelta) {
+                resampledDeltas.push(resampledDelta)
+            }
+        } else {
+            resampledDeltas = cumulativeDeltas
+        }
+
         const scaler = new FrequencyScaler(this.#field, this.#preferLog)
 
-        const { compiledPaths, box, strokeWidth } = scaler.renderValues(cumulativeDeltas)
+        const { compiledPaths, box, strokeWidth } = scaler.renderValues(resampledDeltas)
 
         if (this.debug) {
             console.log(box, strokeWidth)
@@ -333,7 +381,35 @@ class HistogramRender {
 
         const scaler = new HistogramScaler(this.#field, this.#preferLog)
 
-        const { compiledPaths, box, strokeWidth } = scaler.renderValues(frequencies)
+        /**
+         * @type {typeof frequencies}
+         */
+        let resampledFrequencies
+        if(this.roundToNearest) {
+            resampledFrequencies = []
+            /**
+             * @type {typeof frequencies[0] | undefined}
+             */
+            let resampledFrequency
+            for(const frequency of frequencies) {
+                const resampledY = Math.round(frequency.y)
+                if(resampledFrequency?.y === resampledY) {
+                    resampledFrequency.f += frequency.f
+                } else {
+                    if(resampledFrequency) {
+                        resampledFrequencies.push(resampledFrequency)
+                    }
+                    resampledFrequency = {f: frequency.f, y: resampledY}
+                }
+            }
+            if(resampledFrequency) {
+                resampledFrequencies.push(resampledFrequency)
+            }
+        } else {
+            resampledFrequencies = frequencies
+        }
+
+        const { compiledPaths, box, strokeWidth } = scaler.renderValues(resampledFrequencies)
 
         if (this.debug) {
             console.log(box, strokeWidth)
