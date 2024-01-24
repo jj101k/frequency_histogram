@@ -424,15 +424,7 @@ class Scaler {
         const firstPos = { x: this.displayX(values[0]), y: this.displayY(values[0]) }
         const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
 
-        // Last point is handled specially.
-        const tail = values.pop()
-
-        const lastPos = this.renderValuePoints(values, pathRenderer, firstPos)
-
-        // Always a horizontal line to the last point, for symmetry with the first
-        if(tail) {
-            pathRenderer.line({x: this.displayX(tail), y: lastPos.y})
-        }
+        this.renderValuePoints(values, pathRenderer, firstPos)
 
         const box = pathRenderer.box
 
@@ -453,7 +445,6 @@ class Scaler {
      * @returns
      */
     renderValuePoints(values, pathRenderer, firstPos) {
-        let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
             throw new Error("First position is NaN")
@@ -462,9 +453,7 @@ class Scaler {
             const y = this.displayY(d)
             const x = this.displayX(d)
             pathRenderer.line({ x, y })
-            lastPos = { x, y: y }
         }
-        return lastPos
     }
 
     /**
@@ -529,6 +518,9 @@ class FrequencyScaler extends Scaler {
      * @returns
      */
     renderValuePoints(values, pathRenderer, firstPos) {
+        // Last point is handled specially.
+        const tail = values.pop()
+
         let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
@@ -551,7 +543,11 @@ class FrequencyScaler extends Scaler {
                 lastPos = { x, y }
             }
         }
-        return lastPos
+
+        // Always a horizontal line to the last point, for symmetry with the first
+        if(tail) {
+            pathRenderer.line({x: this.displayX(tail), y: lastPos.y})
+        }
     }
 
     /**
@@ -626,7 +622,6 @@ class HistogramScaler extends Scaler {
      * @returns
      */
     renderValuePoints(values, pathRenderer, firstPos) {
-        let lastPos = firstPos
         if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
             console.error(firstPos)
             throw new Error("First position is NaN")
@@ -637,9 +632,7 @@ class HistogramScaler extends Scaler {
             const y = this.displayY(d)
             pathRenderer.addPathFrom({x, y: 0})
             pathRenderer.line({ x, y })
-            lastPos = { x, y }
         }
-        return lastPos
     }
 
     /**
@@ -715,6 +708,5 @@ class RawScalerOverlap extends RawScaler {
             pathRenderer.line({ x, y })
             lastPos = { x, y }
         }
-        return lastPos
     }
 }
