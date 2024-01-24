@@ -334,7 +334,7 @@ class HistogramRender {
          * @type {typeof cumulativeDeltas}
          */
         let resampledDeltas
-        if(this.roundToNearest) {
+        if(this.roundToNearest && this.#field.isScalar) {
             const resampleScale = this.#resampleScale(cumulativeDeltas[0].y, cumulativeDeltas[cumulativeDeltas.length - 1].y)
 
             resampledDeltas = []
@@ -405,7 +405,7 @@ class HistogramRender {
          * @type {typeof frequencies}
          */
         let resampledFrequencies
-        if(this.roundToNearest) {
+        if(this.roundToNearest && this.#field.isScalar) {
             const resampleScale = this.#resampleScale(frequencies[0].y, frequencies[frequencies.length - 1].y)
 
             resampledFrequencies = []
