@@ -148,6 +148,24 @@ class HistogramRender {
 
     /**
      *
+     * @param {number} min
+     * @param {number} max
+     * @returns
+     */
+    #resampleScale(min, max) {
+        const preferredScale = (max - min) / 40 // Heuristic
+        const bases = [10, 5, 2]
+        const preferredScaleL = Math.log2(preferredScale)
+        // Round to leading 1/2/5
+        const scales = bases.map(b => ({b, s: preferredScaleL / Math.log2(b)}))
+
+        const error = (v) => Math.abs(v - Math.round(v))
+        const scale = scales.sort((a, b) => error(a.s)-error(b.s))[0]
+        return Math.pow(scale.b, Math.round(scale.s))
+    }
+
+    /**
+     *
      */
     debug = false
 
@@ -317,6 +335,8 @@ class HistogramRender {
          */
         let resampledDeltas
         if(this.roundToNearest) {
+            const resampleScale = this.#resampleScale(cumulativeDeltas[0].y, cumulativeDeltas[cumulativeDeltas.length - 1].y)
+
             resampledDeltas = []
             /**
              * @type {typeof cumulativeDeltas[0] | undefined}
@@ -324,7 +344,7 @@ class HistogramRender {
             let resampledDelta
             for(const delta of cumulativeDeltas) {
                 // Deltas apply to the value above this one
-                const resampledY = Math.ceil(delta.y)
+                const resampledY = Math.ceil(delta.y / resampleScale) * resampleScale
                 if(resampledDelta?.y === resampledY) {
                     resampledDelta.f += delta.f
                 } else {
@@ -386,13 +406,15 @@ class HistogramRender {
          */
         let resampledFrequencies
         if(this.roundToNearest) {
+            const resampleScale = this.#resampleScale(frequencies[0].y, frequencies[frequencies.length - 1].y)
+
             resampledFrequencies = []
             /**
              * @type {typeof frequencies[0] | undefined}
              */
             let resampledFrequency
             for(const frequency of frequencies) {
-                const resampledY = Math.round(frequency.y)
+                const resampledY = Math.round(frequency.y / resampleScale) * resampleScale
                 if(resampledFrequency?.y === resampledY) {
                     resampledFrequency.f += frequency.f
                 } else {
