@@ -350,6 +350,7 @@ class YStaticScaler extends ValueScaler {
 }
 
 /**
+ * @abstract
  * @template F
  */
 class Scaler {
