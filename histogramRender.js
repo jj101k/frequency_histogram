@@ -154,14 +154,12 @@ class HistogramRender {
      */
     #resampleScale(min, max) {
         const preferredScale = (max - min) / 40 // Heuristic
-        const bases = [10, 5, 2]
-        const preferredScaleL = Math.log2(preferredScale)
         // Round to leading 1/2/5
-        const scales = bases.map(b => ({b, s: preferredScaleL / Math.log2(b)}))
-
-        const error = (v) => Math.abs(v - Math.round(v))
-        const scale = scales.sort((a, b) => error(a.s)-error(b.s))[0]
-        return Math.pow(scale.b, Math.round(scale.s))
+        const multiple = Math.pow(10, Math.floor(Math.log10(preferredScale)))
+        const significand = preferredScale / multiple
+        const scales = [1, 2, 5, 10]
+        const scale = scales.sort((a, b) => Math.abs(significand - a) - Math.abs(significand - b))[0]
+        return scale * multiple
     }
 
     /**
