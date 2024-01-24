@@ -343,21 +343,21 @@ class HistogramRender {
 
         const scaler = new FrequencyScaler(this.#field, this.#preferLog)
 
-        const { compiledPaths, box, strokeWidth } = scaler.renderValues(resampledDeltas)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledDeltas)
 
         if (this.debug) {
-            console.log(box, strokeWidth)
+            console.log(box, axisStrokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
-        const group = this.#addAxes(box, strokeWidth, svg, scaler)
+        const group = this.#addAxes(box, axisStrokeWidth, svg, scaler)
         const [x, y, w, h] = box.split(/ /).map(v => +v)
 
         for(const compiledPath of compiledPaths) {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
 
-            path.setAttribute("stroke-width", "" + strokeWidth)
+            path.setAttribute("stroke-width", "" + dataStrokeWidth)
             path.setAttribute("fill", "rgba(255, 0, 0, 0.3)")
             group.append(path)
         }
@@ -409,20 +409,20 @@ class HistogramRender {
             resampledFrequencies = frequencies
         }
 
-        const { compiledPaths, box, strokeWidth } = scaler.renderValues(resampledFrequencies)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledFrequencies)
 
         if (this.debug) {
-            console.log(box, strokeWidth)
+            console.log(box, axisStrokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
-        const group = this.#addAxes(box, strokeWidth, svg, scaler)
+        const group = this.#addAxes(box, axisStrokeWidth, svg, scaler)
 
         for(const compiledPath of compiledPaths) {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", "" + strokeWidth)
+            path.setAttribute("stroke-width", "" + dataStrokeWidth)
             group.append(path)
         }
     }
@@ -444,10 +444,10 @@ class HistogramRender {
 
         const scaler = new RawScaler()
 
-        const { compiledPaths, box, strokeWidth } = scaler.renderValues(rawValues)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(rawValues)
 
         if (this.debug) {
-            console.log(box, strokeWidth)
+            console.log(box, axisStrokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
@@ -455,7 +455,7 @@ class HistogramRender {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", "" + strokeWidth)
+            path.setAttribute("stroke-width", "" + dataStrokeWidth)
             svg.append(path)
         }
     }
@@ -477,10 +477,10 @@ class HistogramRender {
 
         const scaler = new RawScalerOverlap()
 
-        const { compiledPaths, box, strokeWidth } = scaler.renderValues(rawValues)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(rawValues)
 
         if (this.debug) {
-            console.log(box, strokeWidth)
+            console.log(box, axisStrokeWidth)
         }
         svg.setAttribute("viewBox", box)
 
@@ -488,7 +488,7 @@ class HistogramRender {
             const path = this.#addPath()
             path.setAttribute("d", compiledPath)
 
-            path.setAttribute("stroke-width", "" + strokeWidth)
+            path.setAttribute("stroke-width", "" + dataStrokeWidth)
             path.setAttribute("stroke", "rgba(255, 0, 0, 0.3)")
             svg.append(path)
         }

@@ -400,6 +400,7 @@ class Scaler {
     /**
      *
      * @param {F[]} values
+     * @returns
      */
     renderValues(values) {
         let trueMinF = this.displayY(values[0])
@@ -425,17 +426,21 @@ class Scaler {
         const firstPos = { x: this.displayX(values[0]), y: this.displayY(values[0]) }
         const pathRenderer = new SvgPathRenderer({x: firstPos.x, y: firstPos.y})
 
-        this.renderValuePoints(values, pathRenderer, firstPos)
+        const dataStrokeWidth = this.renderValuePoints(values, pathRenderer, firstPos)
 
         const box = pathRenderer.box
+
+        const boxProportionateStrokeWidth = this.getStrokeWidth(box.y, box.y + box.h)
 
         return {compiledPaths: pathRenderer.compiledPaths,
             box: [box.x, box.y, box.w, box.h].join(" "),
             // TODO improve
-            strokeWidth: Math.max(
+            axisStrokeWidth: Math.max(
                 this.getStrokeWidth(minX, maxX),
-                this.getStrokeWidth(box.y, box.y + box.h)
-            )}
+                boxProportionateStrokeWidth
+            ),
+            dataStrokeWidth: Math.max(dataStrokeWidth, boxProportionateStrokeWidth),
+        }
     }
 
     /**
@@ -455,6 +460,7 @@ class Scaler {
             const x = this.displayX(d)
             pathRenderer.line({ x, y })
         }
+        return this.getStrokeWidth(firstPos.x, this.displayX(values[values.length - 1]))
     }
 
     /**
@@ -549,6 +555,8 @@ class FrequencyScaler extends Scaler {
         if(tail) {
             pathRenderer.line({x: this.displayX(tail), y: lastPos.y})
         }
+
+        return this.getStrokeWidth(firstPos.x, this.displayX(values[values.length - 1]))
     }
 
     /**
@@ -634,6 +642,8 @@ class HistogramScaler extends Scaler {
             pathRenderer.addPathFrom({x, y: 0})
             pathRenderer.line({ x, y })
         }
+
+        return ((this.displayX(values[values.length - 1]) - firstPos.x) / values.length) * 0.8 // Not quite full
     }
 
     /**
@@ -709,5 +719,7 @@ class RawScalerOverlap extends RawScaler {
             pathRenderer.line({ x, y })
             lastPos = { x, y }
         }
+
+        return this.getStrokeWidth(0, 24)
     }
 }
