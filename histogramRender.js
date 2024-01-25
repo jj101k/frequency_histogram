@@ -26,19 +26,66 @@ const GraphType = {
 }
 
 /**
+ * @abstract
+ */
+class RenderContext {
+    /**
+     * @abstract
+     * @param {RenderPath} path
+     */
+    append(path) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @param {string} box
+     */
+    setViewBox(box) {
+        throw new Error("Not implemented")
+    }
+}
+
+/**
  *
  */
+class RenderPath {
+    /**
+     * @abstract
+     * @param {string} path
+     */
+    setCompiledPath(path) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @param {string} style
+     */
+    setFillStyle(style) {
+        throw new Error("Not implemented")
+    }
+    /**
+     * @abstract
+     * @param {string} style
+     */
+    setStrokeStyle(style) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @param {number} width
+     */
+    setStrokeWidth(width) {
+        throw new Error("Not implemented")
+    }
+}
+
+/**
+ * @abstract
+ */
 class HistogramRender {
-    /**
-     *
-     */
-    #container
-
-    /**
-     * @type {SVGSVGElement | undefined}
-     */
-    #svg
-
     /**
      * @type {EpwNamedNumberField}
      */
@@ -71,83 +118,6 @@ class HistogramRender {
 
     /**
      *
-     * @param {string} box
-     * @param {number} strokeWidth
-     * @param {SVGSVGElement} svg
-     * @param {Scaler} scaler
-     * @returns
-     */
-    #addAxes(box, strokeWidth, svg, scaler) {
-        const [x, y, w, h] = box.split(/ /).map(v => +v)
-        const axes = document.createElementNS("http://www.w3.org/2000/svg", "path")
-        axes.setAttribute("d", `M ${x + w / 10} ${y} L ${x + w / 10} ${y + h - h / 10} L ${x + w} ${y + h - h / 10}`)
-        axes.setAttribute("stroke-width", "" + (strokeWidth * 1.5))
-        axes.setAttribute("stroke", "black")
-        axes.setAttribute("fill", "none")
-        svg.append(axes)
-
-        const bottomLeft = scaler.valueAt(x, y + h)
-        const topRight = scaler.valueAt(x + w, y)
-        // Here, the vertical scale doesn't have a specific meaning
-        const label1 = document.createElementNS("http://www.w3.org/2000/svg", "text")
-        label1.textContent = "" + bottomLeft.y
-        label1.style.fontSize = `${w / 75}px`
-        svg.append(label1)
-        label1.setAttribute("x", "" + (x + w / 10))
-        label1.setAttribute("y", "" + (y + h))
-
-        const label2 = document.createElementNS("http://www.w3.org/2000/svg", "text")
-        label2.textContent = "" + topRight.y
-        label2.style.fontSize = `${w / 75}px`
-        svg.append(label2)
-        label2.setAttribute("x", "" + (x + w - label2.getComputedTextLength()))
-        label2.setAttribute("y", "" + (y + h))
-
-        const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
-        const transform = svg.createSVGTransform()
-        transform.setTranslate(w / 10 + x / 10, y / 10)
-        group.transform.baseVal.appendItem(transform)
-        const transform2 = svg.createSVGTransform()
-        transform2.setScale(9 / 10, 9 / 10)
-        group.transform.baseVal.appendItem(transform2)
-        svg.append(group)
-        return group
-    }
-
-    /**
-     *
-     */
-    #addPath() {
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
-        path.setAttribute("d", "")
-        path.setAttribute("stroke", "red")
-        path.setAttribute("stroke-width", "0.05")
-        path.setAttribute("fill", "none")
-        return path
-    }
-
-    /**
-     *
-     * @returns {SVGSVGElement}
-     */
-    #reinit() {
-        let svg = this.#svg
-        if (!svg) {
-            const document = this.#container.ownerDocument
-            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-            svg.setAttribute("viewBox", "0 0 1000 1000")
-            svg.style.width = "1000px"
-            this.#container.append(svg)
-            this.#svg = svg
-        }
-        for(const c of [...svg.childNodes]) {
-            svg.removeChild(c)
-        }
-        return svg
-    }
-
-    /**
-     *
      * @param {number} min
      * @param {number} max
      * @returns
@@ -160,6 +130,37 @@ class HistogramRender {
         const scales = [1, 2, 5, 10]
         const scale = scales.sort((a, b) => Math.abs(significand - a) - Math.abs(significand - b))[0]
         return scale * multiple
+    }
+
+    /**
+     * @abstract
+     * @protected
+     * @param {string} box
+     * @param {number} strokeWidth
+     * @param {RenderContext} context
+     * @param {Scaler} scaler
+     * @returns {{append(path: RenderPath): *}}
+     */
+    addAxes(box, strokeWidth, context, scaler) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @protected
+     * @returns {RenderPath}
+     */
+    addPath() {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @protected
+     * @returns {RenderContext}
+     */
+    reinit() {
+        throw new Error("Not implemented")
     }
 
     /**
@@ -275,14 +276,6 @@ class HistogramRender {
 
     /**
      *
-     * @param {HTMLElement} container
-     */
-    constructor(container) {
-        this.#container = container
-    }
-
-    /**
-     *
      * @returns
      */
     render() {
@@ -321,7 +314,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const svg = this.#reinit()
+        const context = this.reinit()
         const cumulativeDeltas = histogram.cumulativeDeltas
 
         if (this.debug) {
@@ -366,17 +359,17 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        svg.setAttribute("viewBox", box)
+        context.setViewBox(box)
 
-        const group = this.#addAxes(box, axisStrokeWidth, svg, scaler)
+        const group = this.addAxes(box, axisStrokeWidth, context, scaler)
         const [x, y, w, h] = box.split(/ /).map(v => +v)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.#addPath()
-            path.setAttribute("d", compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
+            const path = this.addPath()
+            path.setCompiledPath(compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
 
-            path.setAttribute("stroke-width", "" + dataStrokeWidth)
-            path.setAttribute("fill", "rgba(255, 0, 0, 0.3)")
+            path.setStrokeWidth(dataStrokeWidth)
+            path.setFillStyle("rgba(255, 0, 0, 0.3)")
             group.append(path)
         }
     }
@@ -390,7 +383,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const svg = this.#reinit()
+        const context = this.reinit()
         const frequencies = histogram.frequencies
 
         if (this.debug) {
@@ -434,15 +427,15 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        svg.setAttribute("viewBox", box)
+        context.setViewBox(box)
 
-        const group = this.#addAxes(box, axisStrokeWidth, svg, scaler)
+        const group = this.addAxes(box, axisStrokeWidth, context, scaler)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.#addPath()
-            path.setAttribute("d", compiledPath)
+            const path = this.addPath()
+            path.setCompiledPath(compiledPath)
 
-            path.setAttribute("stroke-width", "" + dataStrokeWidth)
+            path.setStrokeWidth(dataStrokeWidth)
             group.append(path)
         }
     }
@@ -455,7 +448,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const svg = this.#reinit()
+        const context = this.reinit()
         const rawValues = histogram.rawValues
 
         if (this.debug) {
@@ -469,14 +462,14 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        svg.setAttribute("viewBox", box)
+        context.setViewBox(box)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.#addPath()
-            path.setAttribute("d", compiledPath)
+            const path = this.addPath()
+            path.setCompiledPath(compiledPath)
 
-            path.setAttribute("stroke-width", "" + dataStrokeWidth)
-            svg.append(path)
+            path.setStrokeWidth(dataStrokeWidth)
+            context.append(path)
         }
     }
 
@@ -488,7 +481,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const svg = this.#reinit()
+        const context = this.reinit()
         const rawValues = histogram.rawValues
 
         if (this.debug) {
@@ -502,15 +495,15 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        svg.setAttribute("viewBox", box)
+        context.setViewBox(box)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.#addPath()
-            path.setAttribute("d", compiledPath)
+            const path = this.addPath()
+            path.setCompiledPath(compiledPath)
 
-            path.setAttribute("stroke-width", "" + dataStrokeWidth)
-            path.setAttribute("stroke", "rgba(255, 0, 0, 0.3)")
-            svg.append(path)
+            path.setStrokeWidth(dataStrokeWidth)
+            path.setStrokeStyle("rgba(255, 0, 0, 0.3)")
+            context.append(path)
         }
     }
 }
