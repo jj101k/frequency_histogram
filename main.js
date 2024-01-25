@@ -11,7 +11,9 @@ function main() {
     if(!graphContainer) {
         throw new Error("Cannot find graph container")
     }
-    const hr = new HistogramRender(new RenderContextSvg(graphContainer))
+    const hr = new HistogramRender(
+        sessionStorage.useCanvas ? new RenderContextCanvas(graphContainer) : new RenderContextSvg(graphContainer)
+    )
     /** @type {HTMLInputElement | null} */
     const e = document.querySelector("#import")
     if(!e) {
