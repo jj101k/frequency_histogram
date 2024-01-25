@@ -1,5 +1,5 @@
 //@ts-check
-/// <reference path="./histogramRenderSvg.js" />
+/// <reference path="./renderContextSvg.js" />
 /// <reference path="./epwImporter.js" />
 /// <reference path="../pathfind/Frameworker.js" />
 
@@ -11,7 +11,7 @@ function main() {
     if(!graphContainer) {
         throw new Error("Cannot find graph container")
     }
-    const hr = new HistogramRenderSvg(graphContainer)
+    const hr = new HistogramRender(new RenderContextSvg(graphContainer))
     /** @type {HTMLInputElement | null} */
     const e = document.querySelector("#import")
     if(!e) {

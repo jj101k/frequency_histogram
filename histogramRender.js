@@ -1,6 +1,7 @@
 //@ts-check
 /// <reference path="./epwDataFormat.js" />
 /// <reference path="./histogram.js" />
+/// <reference path="./renderContext.js" />
 /// <reference path="./scaler.js" />
 
 /**
@@ -26,64 +27,7 @@ const GraphType = {
 }
 
 /**
- * @abstract
- */
-class RenderContext {
-    /**
-     * @abstract
-     * @param {RenderPath} path
-     */
-    append(path) {
-        throw new Error("Not implemented")
-    }
-
-    /**
-     * @abstract
-     * @param {string} box
-     */
-    setViewBox(box) {
-        throw new Error("Not implemented")
-    }
-}
-
-/**
  *
- */
-class RenderPath {
-    /**
-     * @abstract
-     * @param {string} path
-     */
-    setCompiledPath(path) {
-        throw new Error("Not implemented")
-    }
-
-    /**
-     * @abstract
-     * @param {string} style
-     */
-    setFillStyle(style) {
-        throw new Error("Not implemented")
-    }
-    /**
-     * @abstract
-     * @param {string} style
-     */
-    setStrokeStyle(style) {
-        throw new Error("Not implemented")
-    }
-
-    /**
-     * @abstract
-     * @param {number} width
-     */
-    setStrokeWidth(width) {
-        throw new Error("Not implemented")
-    }
-}
-
-/**
- * @abstract
  */
 class HistogramRender {
     /**
@@ -112,6 +56,11 @@ class HistogramRender {
     #preferLog
 
     /**
+     *
+     */
+    #renderContext
+
+    /**
      * @type {boolean}
      */
     #roundToNearest
@@ -130,37 +79,6 @@ class HistogramRender {
         const scales = [1, 2, 5, 10]
         const scale = scales.sort((a, b) => Math.abs(significand - a) - Math.abs(significand - b))[0]
         return scale * multiple
-    }
-
-    /**
-     * @abstract
-     * @protected
-     * @param {string} box
-     * @param {number} strokeWidth
-     * @param {RenderContext} context
-     * @param {Scaler} scaler
-     * @returns {{append(path: RenderPath): *}}
-     */
-    addAxes(box, strokeWidth, context, scaler) {
-        throw new Error("Not implemented")
-    }
-
-    /**
-     * @abstract
-     * @protected
-     * @returns {RenderPath}
-     */
-    addPath() {
-        throw new Error("Not implemented")
-    }
-
-    /**
-     * @abstract
-     * @protected
-     * @returns {RenderContext}
-     */
-    reinit() {
-        throw new Error("Not implemented")
     }
 
     /**
@@ -276,6 +194,14 @@ class HistogramRender {
 
     /**
      *
+     * @param {RenderContext} renderContext
+     */
+    constructor(renderContext) {
+        this.#renderContext = renderContext
+    }
+
+    /**
+     *
      * @returns
      */
     render() {
@@ -314,7 +240,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const context = this.reinit()
+        this.#renderContext.reinit()
         const cumulativeDeltas = histogram.cumulativeDeltas
 
         if (this.debug) {
@@ -359,13 +285,13 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        context.setViewBox(box)
+        this.#renderContext.setViewBox(box)
 
-        const group = this.addAxes(box, axisStrokeWidth, context, scaler)
+        const group = this.#renderContext.addAxes(box, axisStrokeWidth, scaler)
         const [x, y, w, h] = box.split(/ /).map(v => +v)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.addPath()
+            const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
 
             path.setStrokeWidth(dataStrokeWidth)
@@ -383,7 +309,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const context = this.reinit()
+        this.#renderContext.reinit()
         const frequencies = histogram.frequencies
 
         if (this.debug) {
@@ -427,12 +353,12 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        context.setViewBox(box)
+        this.#renderContext.setViewBox(box)
 
-        const group = this.addAxes(box, axisStrokeWidth, context, scaler)
+        const group = this.#renderContext.addAxes(box, axisStrokeWidth, scaler)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.addPath()
+            const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
@@ -448,7 +374,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const context = this.reinit()
+        this.#renderContext.reinit()
         const rawValues = histogram.rawValues
 
         if (this.debug) {
@@ -462,14 +388,14 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        context.setViewBox(box)
+        this.#renderContext.setViewBox(box)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.addPath()
+            const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
-            context.append(path)
+            this.#renderContext.append(path)
         }
     }
 
@@ -481,7 +407,7 @@ class HistogramRender {
         if (!histogram) {
             return
         }
-        const context = this.reinit()
+        this.#renderContext.reinit()
         const rawValues = histogram.rawValues
 
         if (this.debug) {
@@ -495,15 +421,15 @@ class HistogramRender {
         if (this.debug) {
             console.log(box, axisStrokeWidth)
         }
-        context.setViewBox(box)
+        this.#renderContext.setViewBox(box)
 
         for(const compiledPath of compiledPaths) {
-            const path = this.addPath()
+            const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
             path.setStrokeStyle("rgba(255, 0, 0, 0.3)")
-            context.append(path)
+            this.#renderContext.append(path)
         }
     }
 }
