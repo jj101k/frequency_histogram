@@ -1,0 +1,22 @@
+{
+  "name": "frequency_histogram",
+  "version": "1.0.0",
+  "description": "Frequency analysis of scalar values at discrete time points",
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jj101k/frequency_histogram.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jim Driscoll <jim.a.driscoll@gmail.com>",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "pathfind": "github:jj101k/pathfind"
+  },
+  "bugs": {
+    "url": "https://github.com/jj101k/frequency_histogram/issues"
+  },
+  "homepage": "https://github.com/jj101k/frequency_histogram#readme"
+}
