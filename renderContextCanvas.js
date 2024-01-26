@@ -63,6 +63,7 @@ class RenderContextCanvas extends RenderContext {
         }
         context.scale(this.#outerSize.x * this.#pixelDensity/w, this.#outerSize.x * this.#pixelDensity/w)
         context.translate(-x, -y)
+        context.translate(-w/20, h/10)
 
         context.save()
 
