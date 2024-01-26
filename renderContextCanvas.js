@@ -77,8 +77,8 @@ class RenderContextCanvas extends RenderContext {
 
         context.fillText("" + topRight.y, x + w - metrics.width, y + h)
 
-        context.translate(w / 10 + x / 10, y / 10)
         context.restore()
+        context.translate(w / 10 + x / 10, y / 10)
         context.scale(9 / 10, 9 / 10)
         return this
     }
