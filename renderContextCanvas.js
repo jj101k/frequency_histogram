@@ -19,6 +19,16 @@ class RenderContextCanvas extends RenderContext {
     #canvas
 
     /**
+     *
+     */
+    #outerSize = {x: 1000, y: 500}
+
+    /**
+     *
+     */
+    #pixelDensity = 2
+
+    /**
      * @protected
      */
     get canvas() {
@@ -26,10 +36,10 @@ class RenderContextCanvas extends RenderContext {
         if (!canvas) {
             const document = this.#container.ownerDocument
             canvas = document.createElement("canvas")
-            canvas.width = 2000
-            canvas.height = 1000
-            canvas.style.width = "1000px"
-            canvas.style.height = "500px"
+            canvas.width = this.#outerSize.x * this.#pixelDensity
+            canvas.height = this.#outerSize.y * this.#pixelDensity
+            canvas.style.width = `${this.#outerSize.x}px`
+            canvas.style.height = `${this.#outerSize.y}px`
             this.#container.append(canvas)
             this.#canvas = canvas
         }
@@ -51,7 +61,7 @@ class RenderContextCanvas extends RenderContext {
         if(!context) {
             throw new Error("No context")
         }
-        context.scale(2000/w, 2000 / w) // TODO
+        context.scale(this.#outerSize.x * this.#pixelDensity/w, this.#outerSize.x * this.#pixelDensity/w)
         context.translate(-x, -y)
 
         context.save()
@@ -129,7 +139,7 @@ class RenderContextCanvas extends RenderContext {
         }
         context.resetTransform()
         context.fillStyle = "rgb(240,240,240)"
-        context.fillRect(0, 0, 2000, 1000)
+        context.fillRect(0, 0, this.#outerSize.x * this.#pixelDensity, this.#outerSize.y * this.#pixelDensity)
     }
 
     setViewBox(box) {
