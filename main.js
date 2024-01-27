@@ -22,6 +22,13 @@ function main() {
     const importer = new EpwImporter(e, hr)
 
     const retainedData = {
+        get renderer() {
+            return sessionStorage.useCanvas
+        },
+        set renderer(v) {
+            sessionStorage.useCanvas = v
+            location.reload()
+        },
         get units() {
             return this.field.units
         },
@@ -74,8 +81,10 @@ function main() {
                     }))
                 ]
             }
-        }
-
+        },
+        renderer: {
+            options: [{name: "SVG", value: ""}, {name: "Canvas", value: "1"}]
+        },
     })
     importer.addEventListener("import", () => {
         const e = new Event("update-options:period")
