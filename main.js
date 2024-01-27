@@ -38,55 +38,44 @@ function main() {
     Frameworker.proxy(retainedData, hr, ["noiseReduction", "period", "roundToNearest", "debug", "field", "preferLog", "first24", "graphType"],
         {}, [])
 
+    class PeriodOptions extends OptionSetLiteralAny {
+        get options() {
+            const defaultPeriodOptions = [
+                {
+                    name: "All",
+                    year: null,
+                    month: null,
+                },
+            ]
+            if(!hr.histogram) {
+                return defaultPeriodOptions
+            }
+            const yearField = EpwFields.find(field => field.name == "Year")
+            const monthField = EpwFields.find(field => field.name == "Month")
+            if(!yearField || !monthField) {
+                throw new Error("Could not find year/month fields")
+            }
+            return [
+                ...defaultPeriodOptions,
+                ...hr.histogram.getUniqueValues([yearField, monthField]).map(([y, m]) => ({
+                    name: `${y}-${("" + m).padStart(2, "0")}`,
+                    year: y,
+                    month: m,
+                }))
+            ]
+        }
+    }
+
     const f = new Frameworker(retainedData, document, {
-        field: {
-            /**
-             * @type {EpwNamedNumberField[]}
-             */
-            get options() {
-                return EpwFields.filter(field => field instanceof EpwNamedNumberField)
-            }
-        },
-        graphType: {
-            get options() {
-                return [
-                    {name: "Interpolated Histogram", value: 1},
-                    {name: "Histogram", value: 0},
-                    {name: "Raw", value: -1},
-                    {name: "Raw (Day overlap)", value: -2},
-                ]
-            }
-        },
-        period: {
-            get options() {
-                const defaultPeriodOptions = [
-                    {
-                        name: "All",
-                        year: null,
-                        month: null,
-                    },
-                ]
-                if(!hr.histogram) {
-                    return defaultPeriodOptions
-                }
-                const yearField = EpwFields.find(field => field.name == "Year")
-                const monthField = EpwFields.find(field => field.name == "Month")
-                if(!yearField || !monthField) {
-                    throw new Error("Could not find year/month fields")
-                }
-                return [
-                    ...defaultPeriodOptions,
-                    ...hr.histogram.getUniqueValues([yearField, monthField]).map(([y, m]) => ({
-                        name: `${y}-${("" + m).padStart(2, "0")}`,
-                        year: y,
-                        month: m,
-                    }))
-                ]
-            }
-        },
-        renderer: {
-            options: [{name: "SVG", value: ""}, {name: "Canvas", value: "1"}]
-        },
+        field: new OptionSetLiteral(EpwFields.filter(field => field instanceof EpwNamedNumberField)),
+        graphType: new OptionSetMapped([
+            {name: "Interpolated Histogram", value: 1},
+            {name: "Histogram", value: 0},
+            {name: "Raw", value: -1},
+            {name: "Raw (Day overlap)", value: -2},
+        ]),
+        period: new PeriodOptions(),
+        renderer: new OptionSetMapped([{name: "SVG", value: ""}, {name: "Canvas", value: "1"}]),
     })
     importer.addEventListener("import", () => {
         const e = new Event("update-options:period")
