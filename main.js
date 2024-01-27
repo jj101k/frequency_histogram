@@ -38,7 +38,7 @@ function main() {
     Frameworker.proxy(retainedData, hr, ["noiseReduction", "period", "roundToNearest", "debug", "field", "preferLog", "first24", "graphType"],
         {}, [])
 
-    class PeriodOptions extends OptionSetLiteralAny {
+    class PeriodOptions extends OptionSet {
         get options() {
             const defaultPeriodOptions = [
                 {
@@ -63,6 +63,22 @@ function main() {
                     month: m,
                 }))
             ]
+        }
+
+        /**
+         *
+         * @param {{year: number | null, month: number | null} | undefined} value
+         * @returns
+         */
+        optionMatching(value) {
+            if(!value) {
+                return "" + 0
+            }
+            return this.options.findIndex(o => o.year === value.year && o.month === value.month)?.toString()
+        }
+
+        valueFor(htmlValue) {
+            return this.options[htmlValue]
         }
     }
 
