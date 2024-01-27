@@ -390,12 +390,14 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler)
+
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
-            this.#renderContext.append(path)
+            group.append(path)
         }
     }
 
@@ -423,13 +425,15 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler)
+
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
             path.setStrokeStyle("rgba(255, 0, 0, 0.3)")
-            this.#renderContext.append(path)
+            group.append(path)
         }
     }
 }
