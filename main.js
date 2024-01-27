@@ -82,13 +82,22 @@ function main() {
         }
     }
 
+    /**
+     *
+     */
+    class OptionSetLiteralValue extends OptionSetLiteral {
+        optionMatching(value) {
+            return Object.entries(this.options).find(([k, v]) => v.value == value.value)?.[0]
+        }
+    }
+
     const f = new Frameworker(retainedData, document, {
         field: new OptionSetLiteral(EpwFields.filter(field => field instanceof EpwNamedNumberField)),
-        graphType: new OptionSetMapped([
-            {name: "Interpolated Histogram", value: 1},
-            {name: "Histogram", value: 0},
-            {name: "Raw", value: -1},
-            {name: "Raw (Day overlap)", value: -2},
+        graphType: new OptionSetLiteralValue([
+            {name: "Interpolated Histogram", value: GraphType.Histogram},
+            {name: "Histogram", value: GraphType.PlainHistogram},
+            {name: "Raw", value: GraphType.Raw},
+            {name: "Raw (Day overlap)", value: GraphType.RawDayOverlap},
         ]),
         period: new PeriodOptions(),
         renderer: new OptionSetMapped([{name: "SVG", value: ""}, {name: "Canvas", value: "1"}]),
