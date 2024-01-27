@@ -6,7 +6,7 @@
 class RenderPath {
     /**
      * @abstract
-     * @param {string} path
+     * @param {Path} path
      */
     setCompiledPath(path) {
         throw new Error("Not implemented")

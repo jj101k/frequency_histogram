@@ -132,7 +132,7 @@ class RenderPathSvg extends RenderPath {
     }
 
     setCompiledPath(path) {
-        this.path.setAttribute("d", path)
+        this.path.setAttribute("d", path.map(pc => `${pc.type == "move" ? "M" : "L"} ${pc.x} ${pc.y}`).join(" "))
     }
     setFillStyle(style) {
         this.path.setAttribute("fill", style)

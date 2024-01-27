@@ -292,7 +292,11 @@ class HistogramRender {
 
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
-            path.setCompiledPath(compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
+            path.setCompiledPath([
+                {type: "move", x, y: y + h},
+                ...compiledPath.slice(1),
+                {type: "line", x: x + w, y: y + h}
+            ])
 
             path.setStrokeWidth(dataStrokeWidth)
             path.setFillStyle("rgba(255, 0, 0, 0.3)")

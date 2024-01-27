@@ -113,20 +113,15 @@ class RenderContextCanvas extends RenderContext {
         }
         context.beginPath()
         let p = path.compiledPath
-        while(p) {
-            let md
-            const l = /^L ([^ ]+) ([^ ]+)/
-            const m = /^M ([^ ]+) ([^ ]+)/
-            if(md = p.match(m)) {
-                p = p.replace(m, "")
-                context.moveTo(+md[1], +md[2])
-            } else if(md = p.match(l)) {
-                p = p.replace(l, "")
-                context.lineTo(+md[1], +md[2])
+        while(p.length) {
+            const pc = p.shift()
+            if(pc?.type == "move") {
+                context.moveTo(pc.x, pc.y)
+            } else if(pc?.type == "line") {
+                context.lineTo(pc.x, pc.y)
             } else  {
-                throw new Error("Parse failure at: " + p)
+                throw new Error("Parse failure at: " + pc)
             }
-            p = p.replace(/^ */, "")
         }
         if(path.fillStyle != "none") {
             context.fillStyle = path.fillStyle
@@ -157,9 +152,9 @@ class RenderContextCanvas extends RenderContext {
  */
 class RenderPathCanvas extends RenderPath {
     /**
-     *
+     * @type {Path}
      */
-    compiledPath = ""
+    compiledPath = []
     /**
      *
      */
