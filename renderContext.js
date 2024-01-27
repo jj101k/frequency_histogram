@@ -43,12 +43,11 @@ class RenderPath {
 class RenderContext {
     /**
      * @abstract
-     * @param {string} box
      * @param {number} strokeWidth
      * @param {Scaler} scaler
      * @returns {{append(path: RenderPath): *}}
      */
-    addAxes(box, strokeWidth, scaler) {
+    addAxes(strokeWidth, scaler) {
         throw new Error("Not implemented")
     }
 
@@ -78,7 +77,7 @@ class RenderContext {
 
     /**
      * @abstract
-     * @param {string} box
+     * @param {{x: number, y: number, w: number, h: number}} box
      */
     setViewBox(box) {
         throw new Error("Not implemented")

@@ -433,7 +433,7 @@ class Scaler {
         const boxProportionateStrokeWidth = this.getStrokeWidth(box.y, box.y + box.h)
 
         return {compiledPaths: pathRenderer.compiledPaths,
-            box: [box.x, box.y, box.w, box.h].join(" "),
+            box,
             // TODO improve
             axisStrokeWidth: Math.max(
                 this.getStrokeWidth(minX, maxX),

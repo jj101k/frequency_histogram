@@ -43,8 +43,8 @@ class RenderContextSvg extends RenderContext {
         this.#container = container
     }
 
-    addAxes(box, strokeWidth, scaler) {
-        const [x, y, w, h] = box.split(/ /).map(v => +v)
+    addAxes(strokeWidth, scaler) {
+        const {x, y, width: w, height: h} = this.svg.viewBox.baseVal
         const axes = document.createElementNS("http://www.w3.org/2000/svg", "path")
         axes.setAttribute("d", `M ${x + w / 10} ${y} L ${x + w / 10} ${y + h - h / 10} L ${x + w} ${y + h - h / 10}`)
         axes.setAttribute("stroke-width", "" + (strokeWidth * 1.5))
@@ -103,7 +103,12 @@ class RenderContextSvg extends RenderContext {
     }
 
     setViewBox(box) {
-        this.svg.setAttribute("viewBox", box)
+        const {x, y, w, h} = box
+        const viewBox = this.svg.viewBox.baseVal
+        viewBox.x = x
+        viewBox.y = y
+        viewBox.width = w
+        viewBox.height = h
     }
 }
 

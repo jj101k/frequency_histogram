@@ -29,6 +29,11 @@ class RenderContextCanvas extends RenderContext {
     #pixelDensity = 2
 
     /**
+     *
+     */
+    #viewBox = {x: 0, y: 0, w: 2000, h: 1000}
+
+    /**
      * @protected
      */
     get canvas() {
@@ -55,8 +60,8 @@ class RenderContextCanvas extends RenderContext {
         this.#container = container
     }
 
-    addAxes(box, strokeWidth, scaler) {
-        const [x, y, w, h] = box.split(/ /).map(v => +v)
+    addAxes(strokeWidth, scaler) {
+        const {x, y, w, h} = this.#viewBox
         const context = this.canvas.getContext("2d")
         if(!context) {
             throw new Error("No context")
@@ -144,7 +149,7 @@ class RenderContextCanvas extends RenderContext {
     }
 
     setViewBox(box) {
-        const [x, y, w, h] = box.split(/ /).map(v => +v) // TODO
+        this.#viewBox = box
     }
 }
 
