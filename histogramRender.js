@@ -287,7 +287,7 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
-        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler)
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: true})
         const {x, y, w, h} = box
 
         for(const compiledPath of compiledPaths) {
@@ -355,7 +355,7 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
-        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler)
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: true})
 
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
@@ -390,7 +390,7 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
-        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler)
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: false})
 
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
@@ -425,7 +425,7 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
-        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler)
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: false})
 
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()

@@ -60,7 +60,7 @@ class RenderContextCanvas extends RenderContext {
         this.#container = container
     }
 
-    addAxes(strokeWidth, scaler) {
+    addAxes(strokeWidth, scaler, labels) {
         const {x, y, w, h} = this.#viewBox
         const context = this.canvas.getContext("2d")
         if(!context) {
@@ -83,14 +83,14 @@ class RenderContextCanvas extends RenderContext {
         const bottomLeft = scaler.valueAt(x, y + h)
         const topRight = scaler.valueAt(x + w, y)
 
-        // Here, the vertical scale doesn't have a specific meaning
+        if(labels.x) {
+            context.fillStyle = "black"
+            context.font = `${w / 75}px sans-serif`
+            context.fillText("" + bottomLeft.y, x + w / 10, y + h)
+            const metrics = context.measureText("" + bottomLeft.y)
 
-        context.fillStyle = "black"
-        context.font = `${w / 75}px sans-serif`
-        context.fillText("" + bottomLeft.y, x + w / 10, y + h)
-        const metrics = context.measureText("" + bottomLeft.y)
-
-        context.fillText("" + topRight.y, x + w - metrics.width, y + h)
+            context.fillText("" + topRight.y, x + w - metrics.width, y + h)
+        }
 
         context.restore()
         context.translate(w / 10 + x / 10, y / 10)

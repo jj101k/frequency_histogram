@@ -45,9 +45,10 @@ class RenderContext {
      * @abstract
      * @param {number} strokeWidth
      * @param {Scaler} scaler
+     * @param {{x?: boolean}} labels
      * @returns {{append(path: RenderPath): *}}
      */
-    addAxes(strokeWidth, scaler) {
+    addAxes(strokeWidth, scaler, labels) {
         throw new Error("Not implemented")
     }
 

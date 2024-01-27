@@ -43,7 +43,7 @@ class RenderContextSvg extends RenderContext {
         this.#container = container
     }
 
-    addAxes(strokeWidth, scaler) {
+    addAxes(strokeWidth, scaler, labels) {
         const {x, y, width: w, height: h} = this.svg.viewBox.baseVal
         const axes = document.createElementNS("http://www.w3.org/2000/svg", "path")
         axes.setAttribute("d", `M ${x + w / 10} ${y} L ${x + w / 10} ${y + h - h / 10} L ${x + w} ${y + h - h / 10}`)
@@ -52,22 +52,24 @@ class RenderContextSvg extends RenderContext {
         axes.setAttribute("fill", "none")
         this.append(axes)
 
-        const bottomLeft = scaler.valueAt(x, y + h)
-        const topRight = scaler.valueAt(x + w, y)
-        // Here, the vertical scale doesn't have a specific meaning
-        const label1 = document.createElementNS("http://www.w3.org/2000/svg", "text")
-        label1.textContent = "" + bottomLeft.y
-        label1.style.fontSize = `${w / 75}px`
-        this.append(label1)
-        label1.setAttribute("x", "" + (x + w / 10))
-        label1.setAttribute("y", "" + (y + h))
+        if(labels.x) {
+            const bottomLeft = scaler.valueAt(x, y + h)
+            const topRight = scaler.valueAt(x + w, y)
+            // Here, the vertical scale doesn't have a specific meaning
+            const label1 = document.createElementNS("http://www.w3.org/2000/svg", "text")
+            label1.textContent = "" + bottomLeft.y
+            label1.style.fontSize = `${w / 75}px`
+            this.append(label1)
+            label1.setAttribute("x", "" + (x + w / 10))
+            label1.setAttribute("y", "" + (y + h))
 
-        const label2 = document.createElementNS("http://www.w3.org/2000/svg", "text")
-        label2.textContent = "" + topRight.y
-        label2.style.fontSize = `${w / 75}px`
-        this.append(label2)
-        label2.setAttribute("x", "" + (x + w - label2.getComputedTextLength()))
-        label2.setAttribute("y", "" + (y + h))
+            const label2 = document.createElementNS("http://www.w3.org/2000/svg", "text")
+            label2.textContent = "" + topRight.y
+            label2.style.fontSize = `${w / 75}px`
+            this.append(label2)
+            label2.setAttribute("x", "" + (x + w - label2.getComputedTextLength()))
+            label2.setAttribute("y", "" + (y + h))
+        }
 
         const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
         const transform = this.svg.createSVGTransform()
