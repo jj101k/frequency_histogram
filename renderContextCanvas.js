@@ -83,10 +83,9 @@ class RenderContextCanvas extends RenderContext {
         const bottomLeft = scaler.valueAt(x, y + h)
         const topRight = scaler.valueAt(x + w, y)
 
-        context.translate(10, 10)
-
         // Here, the vertical scale doesn't have a specific meaning
 
+        context.fillStyle = "black"
         context.font = `${w / 75}px sans-serif`
         context.fillText("" + bottomLeft.y, x + w / 10, y + h)
         const metrics = context.measureText("" + bottomLeft.y)
