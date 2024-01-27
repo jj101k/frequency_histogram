@@ -26,8 +26,10 @@ function main() {
             return sessionStorage.useCanvas
         },
         set renderer(v) {
-            sessionStorage.useCanvas = v
-            location.reload()
+            if(v !== this.renderer) {
+                sessionStorage.useCanvas = v
+                location.reload()
+            }
         },
         get units() {
             return this.field.units
