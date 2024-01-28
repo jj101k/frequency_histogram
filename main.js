@@ -11,9 +11,13 @@ function main() {
     if(!graphContainer) {
         throw new Error("Cannot find graph container")
     }
-    const hr = new HistogramRender(
-        sessionStorage.useCanvas ? new RenderContextCanvas(graphContainer) : new RenderContextSvg(graphContainer)
-    )
+    /**
+     *
+     * @returns
+     */
+    const newRenderContext = () => sessionStorage.useCanvas ? new RenderContextCanvas(graphContainer) :
+        new RenderContextSvg(graphContainer)
+    const hr = new HistogramRender(newRenderContext())
     /** @type {HTMLInputElement | null} */
     const e = document.querySelector("#import")
     if(!e) {
@@ -28,7 +32,7 @@ function main() {
         set renderer(v) {
             if(v !== this.renderer) {
                 sessionStorage.useCanvas = v
-                location.reload()
+                hr.renderContext = newRenderContext()
             }
         },
         get units() {

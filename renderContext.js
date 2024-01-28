@@ -72,6 +72,14 @@ class RenderContext {
      * @abstract
      * @returns {void}
      */
+    deinit() {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @returns {void}
+     */
     reinit() {
         throw new Error("Not implemented")
     }

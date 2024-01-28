@@ -132,6 +132,13 @@ class RenderContextCanvas extends RenderContext {
         context.stroke()
     }
 
+    deinit() {
+        if(this.#canvas) {
+            this.#container.removeChild(this.#canvas)
+            this.#canvas = undefined
+        }
+    }
+
     reinit() {
         const context = this.canvas.getContext("2d")
         if(!context) {

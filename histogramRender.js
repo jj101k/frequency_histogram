@@ -178,6 +178,16 @@ class HistogramRender {
         this.render()
     }
 
+    get renderContext() {
+        return this.#renderContext
+    }
+
+    set renderContext(v) {
+        this.#renderContext.deinit()
+        this.#renderContext = v
+        this.render()
+    }
+
     /**
      *
      */

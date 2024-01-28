@@ -97,6 +97,13 @@ class RenderContextSvg extends RenderContext {
         this.svg.append(path)
     }
 
+    deinit() {
+        if(this.#svg) {
+            this.#container.removeChild(this.#svg)
+            this.#svg = undefined
+        }
+    }
+
     reinit() {
         const svg = this.svg
         for(const c of [...svg.childNodes]) {
