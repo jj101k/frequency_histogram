@@ -2,6 +2,13 @@
 /// <reference path="./epwDataFormat.js" />
 
 /**
+ * @typedef {{type: "move", x: number, y: number}} PathMove
+ * @typedef {{type: "line", x: number, y: number}} PathLine
+ * @typedef {PathMove | PathLine} PathComponent
+ * @typedef {PathComponent[]} Path
+ */
+
+/**
  *
  */
 class SvgPathRenderer {
@@ -11,12 +18,12 @@ class SvgPathRenderer {
     #bottomRight
 
     /**
-     *
+     * @type {Path}
      */
     #compiledPath
 
     /**
-     * @type {string[]}
+     * @type {Path[]}
      */
     #compiledPaths = []
 
@@ -86,9 +93,10 @@ class SvgPathRenderer {
     /**
      *
      * @param {{x: number, y: number}} pos
+     * @returns {Path}
      */
     #newPath(pos) {
-        return `M ${pos.x} ${pos.y}`
+        return [{type: "move", ...pos}]
     }
 
     /**
@@ -109,7 +117,7 @@ class SvgPathRenderer {
             console.error(pos)
             throw new Error("NaN position")
         }
-        this.#compiledPath += ` L ${pos.x} ${pos.y}`
+        this.#compiledPath.push({type: "line", ...pos})
         this.#fit(pos)
     }
 
@@ -122,7 +130,7 @@ class SvgPathRenderer {
             console.error(pos)
             throw new Error("NaN position")
         }
-        this.#compiledPath += ` M ${pos.x} ${pos.y}`
+        this.#compiledPath.push({type: "move", ...pos})
         this.#fit(pos)
     }
 }
@@ -433,7 +441,7 @@ class Scaler {
         const boxProportionateStrokeWidth = this.getStrokeWidth(box.y, box.y + box.h)
 
         return {compiledPaths: pathRenderer.compiledPaths,
-            box: [box.x, box.y, box.w, box.h].join(" "),
+            box,
             // TODO improve
             axisStrokeWidth: Math.max(
                 this.getStrokeWidth(minX, maxX),

@@ -178,6 +178,16 @@ class HistogramRender {
         this.render()
     }
 
+    get renderContext() {
+        return this.#renderContext
+    }
+
+    set renderContext(v) {
+        this.#renderContext.deinit()
+        this.#renderContext = v
+        this.render()
+    }
+
     /**
      *
      */
@@ -287,12 +297,16 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
-        const group = this.#renderContext.addAxes(box, axisStrokeWidth, scaler)
-        const [x, y, w, h] = box.split(/ /).map(v => +v)
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: true})
+        const {x, y, w, h} = box
 
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
-            path.setCompiledPath(compiledPath.replace(/^M -?[\d.]+ -?[\d.]+ /, `M ${x} ${y + h} `) + ` L ${x + w} ${y + h}`)
+            path.setCompiledPath([
+                {type: "move", x, y: y + h},
+                ...compiledPath.slice(1),
+                {type: "line", x: x + w, y: y + h}
+            ])
 
             path.setStrokeWidth(dataStrokeWidth)
             path.setFillStyle("rgba(255, 0, 0, 0.3)")
@@ -355,7 +369,7 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
-        const group = this.#renderContext.addAxes(box, axisStrokeWidth, scaler)
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: true})
 
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
@@ -390,12 +404,14 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: false})
+
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
-            this.#renderContext.append(path)
+            group.append(path)
         }
     }
 
@@ -423,13 +439,15 @@ class HistogramRender {
         }
         this.#renderContext.setViewBox(box)
 
+        const group = this.#renderContext.addAxes(axisStrokeWidth, scaler, {x: false})
+
         for(const compiledPath of compiledPaths) {
             const path = this.#renderContext.addPath()
             path.setCompiledPath(compiledPath)
 
             path.setStrokeWidth(dataStrokeWidth)
             path.setStrokeStyle("rgba(255, 0, 0, 0.3)")
-            this.#renderContext.append(path)
+            group.append(path)
         }
     }
 }

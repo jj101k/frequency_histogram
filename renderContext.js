@@ -6,7 +6,7 @@
 class RenderPath {
     /**
      * @abstract
-     * @param {string} path
+     * @param {Path} path
      */
     setCompiledPath(path) {
         throw new Error("Not implemented")
@@ -43,12 +43,12 @@ class RenderPath {
 class RenderContext {
     /**
      * @abstract
-     * @param {string} box
      * @param {number} strokeWidth
      * @param {Scaler} scaler
+     * @param {{x?: boolean}} labels
      * @returns {{append(path: RenderPath): *}}
      */
-    addAxes(box, strokeWidth, scaler) {
+    addAxes(strokeWidth, scaler, labels) {
         throw new Error("Not implemented")
     }
 
@@ -72,13 +72,21 @@ class RenderContext {
      * @abstract
      * @returns {void}
      */
+    deinit() {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @abstract
+     * @returns {void}
+     */
     reinit() {
         throw new Error("Not implemented")
     }
 
     /**
      * @abstract
-     * @param {string} box
+     * @param {{x: number, y: number, w: number, h: number}} box
      */
     setViewBox(box) {
         throw new Error("Not implemented")

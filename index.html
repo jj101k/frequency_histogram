@@ -11,6 +11,7 @@
     <script src="scaler.js"></script>
     <script src="renderContext.js"></script>
     <script src="histogramRender.js"></script>
+    <script src="renderContextCanvas.js"></script>
     <script src="renderContextSvg.js"></script>
     <script src="epwImporter.js"></script>
     <script src="epwDataFormat.js"></script>
@@ -73,8 +74,11 @@
 <body>
     <section id="main">
         <section>
-            <h2>Import</h2>
-            <p>Import EPW data file <input type="file" id="import" accept=".epw"/></p>
+            <p>Import EPW data file <input type="file" id="import"
+            accept=".epw"/></p>
+            <p>Renderer</p>
+            <fieldset data-readwrite="renderer">
+            </fieldset>
         </section>
         <section>
             <h2>Options</h2>
