@@ -290,7 +290,7 @@ class HistogramRender {
 
         const scaler = new FrequencyScaler(this.#field, this.#preferLog)
 
-        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledDeltas)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledDeltas, [{y: 0, f: 0}])
 
         if (this.debug) {
             console.log(box, axisStrokeWidth)
@@ -362,7 +362,7 @@ class HistogramRender {
             resampledFrequencies = frequencies
         }
 
-        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledFrequencies)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledFrequencies, [{y: 0, f: 0}])
 
         if (this.debug) {
             console.log(box, axisStrokeWidth)

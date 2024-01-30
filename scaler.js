@@ -409,13 +409,16 @@ class Scaler {
     /**
      *
      * @param {F[]} values
+     * @param {F[]} [fitting]
      * @returns
      */
-    renderValues(values) {
+    renderValues(values, fitting) {
         // The X scaler is fixed - it's whatever it naturally is.
         const xRange = this.xScaler.prepare(values)
         // The Y scaler may be rescaled
-        this.yScaler.prepare(values, xRange / 4) // TODO This is a heuristic value
+        const expandedYValues = [...values, ...(fitting ?? [])]
+        const scaleYTo = xRange / 4 // TODO This is a heuristic value
+        this.yScaler.prepare(expandedYValues, scaleYTo)
 
         const minX = this.displayX(values[0])
         const maxX = this.displayX(values[values.length - 1])
