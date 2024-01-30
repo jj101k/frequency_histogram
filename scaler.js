@@ -412,18 +412,6 @@ class Scaler {
      * @returns
      */
     renderValues(values) {
-        let trueMinF = this.displayY(values[0])
-        let trueMaxF = this.displayY(values[0])
-        for (const d of values) {
-            const v = this.displayY(d)
-            if (v > trueMaxF) {
-                trueMaxF = v
-            }
-            if (v < trueMinF) {
-                trueMinF = v
-            }
-        }
-
         // The X scaler is fixed - it's whatever it naturally is.
         const xRange = this.xScaler.prepare(values)
         // The Y scaler may be rescaled
