@@ -237,7 +237,7 @@ class FInverseLogScaler extends ValueScaler {
      */
     scale(d) {
         // 0 may legitimately appear in the middle of exponential frequency sets
-        return -Math.log(d.f + 0.001) * this.scaleFactor
+        return -Math.log(d.f + 1) * this.scaleFactor
     }
 }
 
@@ -583,7 +583,7 @@ class FrequencyScaler extends Scaler {
         let f
         if(this.#field.expectsExponentialFrequency) {
             // 0 may legitimately appear in the middle of exponential frequency sets
-            f = Math.exp(-y) - 0.001
+            f = Math.exp(-y) - 1
         } else {
             f = -y
         }
@@ -670,7 +670,7 @@ class HistogramScaler extends Scaler {
         let f
         if(this.#field.expectsExponentialFrequency) {
             // 0 may legitimately appear in the middle of exponential frequency sets
-            f = Math.exp(-y) - 0.001
+            f = Math.exp(-y) - 1
         } else {
             f = -y
         }
