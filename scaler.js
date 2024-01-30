@@ -647,7 +647,7 @@ class HistogramScaler extends Scaler {
         for (const d of values) {
             const x = this.displayX(d)
             const y = this.displayY(d)
-            pathRenderer.addPathFrom({x, y: 0})
+            pathRenderer.addPathFrom({x, y: this.yScaler.scale({f: 0})})
             pathRenderer.line({ x, y })
         }
 
