@@ -56,7 +56,7 @@ class HistogramRender {
     #preferLog
 
     /**
-     *
+     * @type {RenderContext<RenderPath>}
      */
     #renderContext
 
