@@ -106,6 +106,7 @@ class SvgPathRenderer {
     addPathFrom(pos) {
         this.#compiledPaths.push(this.#compiledPath)
         this.#compiledPath = this.#newPath(pos)
+        this.#fit(pos)
     }
 
     /**
