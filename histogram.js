@@ -47,11 +47,6 @@ class Histogram {
 
     /**
      *
-     */
-    #raw = false
-
-    /**
-     *
      * @param {Record<number, {y: number, f: number}[]>} orderedFrequenciesRealByDS
      * @returns
      */
