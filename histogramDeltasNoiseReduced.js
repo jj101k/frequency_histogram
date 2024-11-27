@@ -132,7 +132,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
     /**
      *
      * @param {DeltaInfo} deltaInfo
-     * @param {numberOptions | undefined} numberOptions
+     * @param {{maximum?: number, minimum?: number} | undefined} numberOptions
      * @param {Record<number, Set<number>>} sensorPointWhitelist
      */
     constructor(deltaInfo, numberOptions, sensorPointWhitelist) {

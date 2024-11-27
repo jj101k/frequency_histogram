@@ -224,7 +224,7 @@ class HistogramDeltasAny {
     /**
      *
      * @param {DeltaInfo} deltaInfo
-     * @param {numberOptions | undefined} numberOptions
+     * @param {{maximum?: number, minimum?: number} | undefined} numberOptions
      */
     constructor(deltaInfo, numberOptions) {
         this.#spanPoints = deltaInfo.deltas
