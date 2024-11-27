@@ -301,3 +301,31 @@ class RawOverlapRenderer extends Renderer {
         return this.getStrokeWidth(0, 24)
     }
 }
+
+/**
+ * @extends {Renderer<HistogramDatum>}
+ */
+class HistogramPositionRenderer extends Renderer {
+    /**
+     *
+     * @param {HistogramDatum[]} values
+     * @param {SvgPathRenderer} pathRenderer
+     * @param {{x: number, y: number}} firstPos
+     * @returns
+     */
+    renderValuePoints(values, pathRenderer, firstPos) {
+        if(Number.isNaN(firstPos.x) || Number.isNaN(firstPos.y)) {
+            console.error(firstPos)
+            throw new Error("First position is NaN")
+        }
+        // These are always discrete
+        for (const d of values) {
+            const x = this.scaler.displayX(d)
+            const y = this.scaler.displayY(d)
+            pathRenderer.addPathFrom({x, y: this.scaler.displayY({f: 0, y: 0})})
+            pathRenderer.line({ x, y })
+        }
+
+        return ((this.scaler.displayX(values[values.length - 1]) - firstPos.x) / values.length) * 0.8 // Not quite full
+    }
+}

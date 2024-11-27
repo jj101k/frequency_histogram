@@ -332,9 +332,6 @@ class HistogramRender {
             console.log(frequencies)
         }
 
-        /**
-         * @type {PositionScaler<HistogramDatum>}
-         */
         const scaler = new HistogramPositionScaler(this.#field, this.#preferLog)
 
         /**
@@ -367,7 +364,7 @@ class HistogramRender {
             resampledFrequencies = frequencies
         }
 
-        const renderer = new Renderer(scaler)
+        const renderer = new HistogramPositionRenderer(scaler)
 
         const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(resampledFrequencies, [{y: 0, f: 0}])
 
