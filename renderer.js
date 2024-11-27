@@ -180,7 +180,7 @@ class Renderer {
 
     /**
      *
-     * @param {Scaler<F>} scaler
+     * @param {PositionScaler<F>} scaler
      */
     constructor(scaler) {
         this.scaler = scaler
@@ -244,7 +244,7 @@ class FrequencyRenderer extends Renderer {
             console.error(firstPos)
             throw new Error("First position is NaN")
         }
-        const renderSquare = values.length < FrequencyScaler.renderSquareLimit
+        const renderSquare = values.length < FrequencyPositionScaler.renderSquareLimit
         if (renderSquare) {
             for (const d of values) {
                 const x = this.scaler.displayX(d)

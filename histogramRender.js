@@ -3,7 +3,7 @@
 /// <reference path="./histogram.js" />
 /// <reference path="./renderContext.js" />
 /// <reference path="./renderer.js" />
-/// <reference path="./scaler.js" />
+/// <reference path="./positionScaler.js" />
 
 /**
  *
@@ -289,7 +289,7 @@ class HistogramRender {
             resampledDeltas = cumulativeDeltas
         }
 
-        const scaler = new FrequencyScaler(this.#field, this.#preferLog)
+        const scaler = new FrequencyPositionScaler(this.#field, this.#preferLog)
         const renderer = new FrequencyRenderer(scaler)
 
         const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(resampledDeltas, [{y: 0, f: 0}])
@@ -333,9 +333,9 @@ class HistogramRender {
         }
 
         /**
-         * @type {Scaler<HistogramDatum>}
+         * @type {PositionScaler<HistogramDatum>}
          */
-        const scaler = new HistogramScaler(this.#field, this.#preferLog)
+        const scaler = new HistogramPositionScaler(this.#field, this.#preferLog)
 
         /**
          * @type {typeof frequencies}
@@ -403,9 +403,9 @@ class HistogramRender {
         }
 
         /**
-         * @type {Scaler<RawDatum>}
+         * @type {PositionScaler<RawDatum>}
          */
-        const scaler = new RawScaler()
+        const scaler = new RawPositionScaler()
         const renderer = new Renderer(scaler)
 
         const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(rawValues)
@@ -441,7 +441,7 @@ class HistogramRender {
             console.log(rawValues)
         }
 
-        const scaler = new RawScalerOverlap()
+        const scaler = new RawPositionScalerOverlap()
         const renderer = new RawOverlapRenderer(scaler)
 
         const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(rawValues)

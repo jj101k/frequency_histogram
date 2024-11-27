@@ -44,7 +44,7 @@ class RenderContext {
     /**
      * @abstract
      * @param {number} strokeWidth
-     * @param {Scaler} scaler
+     * @param {PositionScaler} scaler
      * @param {{x?: boolean}} labels
      * @returns {{append(path: RenderPath): *}}
      */

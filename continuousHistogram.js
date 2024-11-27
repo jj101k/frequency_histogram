@@ -2,7 +2,7 @@
 /// <reference path="epwDataFormat.js" />
 /// <reference path="histogramDeltas.js" />
 /// <reference path="histogramDeltasNoiseReduced.js" />
-/// <reference path="scaler.js" />
+/// <reference path="positionScaler.js" />
 /// <reference path="types.d.ts" />
 
 /**
@@ -80,7 +80,7 @@ class ContinuousHistogram {
      * @returns
      */
     #getAcceptedValues(orderedFrequenciesRealByDS) {
-        const scaler = new FrequencyScaler(this.#fieldInfo.field)
+        const scaler = new FrequencyPositionScaler(this.#fieldInfo.field)
         /**
          * @type {Record<number, Set<number>>}
          */

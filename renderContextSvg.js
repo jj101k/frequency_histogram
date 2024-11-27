@@ -2,7 +2,7 @@
 /// <reference path="./epwDataFormat.js" />
 /// <reference path="./histogram.js" />
 /// <reference path="./histogramRender.js" />
-/// <reference path="./scaler.js" />
+/// <reference path="./positionScaler.js" />
 
 /**
  * @extends {RenderContext<RenderPathSvg>}
