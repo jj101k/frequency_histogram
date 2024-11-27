@@ -139,6 +139,9 @@ class HistogramDeltasAny {
     /**
      * @protected
      *
+     * This estimates where the next (higher) point would be, not exceeding the
+     * maximum if supplied.
+     *
      * @param {number} lastY
      * @param {number} current
      * @param {number | undefined} nextY
@@ -155,6 +158,9 @@ class HistogramDeltasAny {
 
     /**
      * @protected
+     *
+     * This estimates where the previous (lower) point would be, at least the
+     * minimum if provided.
      *
      * @param {number} current
      * @param {number} nextY
