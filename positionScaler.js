@@ -1,5 +1,4 @@
 //@ts-check
-/// <reference path="./epwDataFormat.js" />
 /// <reference path="./valueScaler.js" />
 
 /**
@@ -78,7 +77,7 @@ class FrequencyPositionScaler extends PositionScaler {
 
     /**
      *
-     * @param {EpwNamedNumberField} field
+     * @param {{exponentialValues?: boolean, expectsExponentialFrequency?: boolean}} field
      * @param {boolean | undefined} preferLog
      */
     constructor(field, preferLog = undefined) {
@@ -134,7 +133,7 @@ class HistogramPositionScaler extends PositionScaler {
 
     /**
      *
-     * @param {EpwNamedNumberField} field
+     * @param {{exponentialValues?: boolean, expectsExponentialFrequency?: boolean, isScalar?: boolean}} field
      * @param {boolean | undefined} preferLog
      */
     constructor(field, preferLog) {
