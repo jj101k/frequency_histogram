@@ -20,3 +20,8 @@ interface DeltaInfo {
  *
  */
 type numberOptions = {units?: string, minimum?: number, maximum?: number, enumerated?: number[]} & ({missing: number} | {missingGreaterEqual: number})
+
+/**
+ *
+ */
+type HistogramDatum = {f: number, y: number}

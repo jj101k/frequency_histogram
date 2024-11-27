@@ -2,6 +2,7 @@
 /// <reference path="./epwDataFormat.js" />
 /// <reference path="./histogram.js" />
 /// <reference path="./renderContext.js" />
+/// <reference path="./renderer.js" />
 /// <reference path="./scaler.js" />
 
 /**
@@ -289,8 +290,9 @@ class HistogramRender {
         }
 
         const scaler = new FrequencyScaler(this.#field, this.#preferLog)
+        const renderer = new FrequencyRenderer(scaler)
 
-        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledDeltas, [{y: 0, f: 0}])
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(resampledDeltas, [{y: 0, f: 0}])
 
         if (this.debug) {
             console.log(box, axisStrokeWidth)
@@ -330,6 +332,9 @@ class HistogramRender {
             console.log(frequencies)
         }
 
+        /**
+         * @type {Scaler<HistogramDatum>}
+         */
         const scaler = new HistogramScaler(this.#field, this.#preferLog)
 
         /**
@@ -362,7 +367,9 @@ class HistogramRender {
             resampledFrequencies = frequencies
         }
 
-        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(resampledFrequencies, [{y: 0, f: 0}])
+        const renderer = new Renderer(scaler)
+
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(resampledFrequencies, [{y: 0, f: 0}])
 
         if (this.debug) {
             console.log(box, axisStrokeWidth)
@@ -395,9 +402,13 @@ class HistogramRender {
             console.log(rawValues)
         }
 
+        /**
+         * @type {Scaler<RawDatum>}
+         */
         const scaler = new RawScaler()
+        const renderer = new Renderer(scaler)
 
-        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(rawValues)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(rawValues)
 
         if (this.debug) {
             console.log(box, axisStrokeWidth)
@@ -431,8 +442,9 @@ class HistogramRender {
         }
 
         const scaler = new RawScalerOverlap()
+        const renderer = new RawOverlapRenderer(scaler)
 
-        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = scaler.renderValues(rawValues)
+        const { compiledPaths, box, axisStrokeWidth, dataStrokeWidth } = renderer.renderValues(rawValues)
 
         if (this.debug) {
             console.log(box, axisStrokeWidth)
