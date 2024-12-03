@@ -1,7 +1,5 @@
 //@ts-check
-/// <reference path="noiseReduction/histogramDeltasNoiseReduced.js" />
 /// <reference path="histogramDeltas.js" />
-/// <reference path="positionScaler.js" />
 /// <reference path="types.d.ts" />
 
 /**
@@ -38,10 +36,6 @@ class ContinuousHistogram {
         return orderedFrequenciesReal
     }
     /**
-     *
-     */
-    #bounds
-    /**
      * @type {DeltaInfo | undefined}
      */
     #deltaInfo
@@ -64,67 +58,7 @@ class ContinuousHistogram {
     /**
      *
      */
-    #noiseReduction
-
-    /**
-     *
-     */
     #values
-
-    /**
-     * This is part of the noise reduction system. Values which look like they
-     * are not noise are grouped and returned.
-     *
-     * @param {Record<number, {y: number, f: number}[]>} orderedFrequenciesRealByDS
-     * @returns
-     */
-    #getAcceptedValues(orderedFrequenciesRealByDS) {
-        const scaler = new FrequencyPositionScaler(this.#fieldInfo.field)
-        /**
-         * @type {Record<number, Set<number>>}
-         */
-        const acceptedValuesByDS = {}
-        for(const [ds, orderedFrequenciesReal] of Object.entries(orderedFrequenciesRealByDS)) {
-            if(orderedFrequenciesReal.length <= 2) {
-                acceptedValuesByDS[ds] = new Set(orderedFrequenciesReal.map(f => f.y))
-                continue
-            }
-            /**
-             * @type {Set<number>}
-             */
-            const acceptedValues = new Set()
-            let last = orderedFrequenciesReal[0]
-            acceptedValues.add(last.y)
-
-            let i = 0
-            for (const v of orderedFrequenciesReal.slice(1)) {
-                // Note these values are flipped
-                const dv = scaler.displayY(v)
-                // f0: It's >20% of the previous accepted value
-                if (5 * dv < scaler.displayY(last)) {
-                    last = v
-                    acceptedValues.add(v.y)
-                } else {
-                    // f1: It's >20% of the mean of the next 10 pending
-                    // values
-                    const n10mean = orderedFrequenciesReal.slice(i+1, i+1+10).reduce((p, c) => ({t: p.t + scaler.displayY(c), c: p.c + 1}), {t: 0, c: 0})
-                    if(n10mean.c && 5 * dv < n10mean.t / n10mean.c) {
-                        last = v
-                        acceptedValues.add(v.y)
-                    }
-                }
-                i++
-            }
-            if(acceptedValues.size < 2) {
-                console.warn(orderedFrequenciesReal, acceptedValues)
-                throw new Error(`Internal error: noise reduction produced ${acceptedValues.size} values from ${orderedFrequenciesReal.length}`)
-            }
-            acceptedValuesByDS[ds] = acceptedValues
-        }
-
-        return acceptedValuesByDS
-    }
-
 
     /**
      *
@@ -239,18 +173,25 @@ class ContinuousHistogram {
     }
 
     /**
-     * This provides the deltas with all values with the same y value combined.
+     * @protected
      */
-    get combined() {
+    bounds
+
+    /**
+     * @protected
+     */
+    get deltaInfo() {
         if(!this.#deltaInfo) {
             this.#deltaInfo = this.#getDeltas()
         }
-        const orderedFrequencies = this.#noiseReduction ? ContinuousHistogram.getOrderedFrequencies(this.rawValues) : undefined
-        if(orderedFrequencies && Object.keys(orderedFrequencies).length > 1) {
-            return new HistogramDeltasNoiseReduced(this.#deltaInfo, this.#bounds, this.#getAcceptedValues(orderedFrequencies)).combined
-        } else {
-            return new HistogramDeltas(this.#deltaInfo, this.#bounds).combined
-        }
+        return this.#deltaInfo
+    }
+
+    /**
+     * This provides the deltas with all values with the same y value combined.
+     */
+    get combined() {
+        return new HistogramDeltas(this.deltaInfo, this.bounds).combined
     }
 
     /**
@@ -337,13 +278,11 @@ class ContinuousHistogram {
      * @param {{maximum?: number, minimum?: number}} [bounds] Used to ensure that
      * out-of-range points aren't emitted
      * @param {number} [expectedMinResolution]
-     * @param {boolean} [noiseReduction]
      */
     constructor(values, length, bounds, expectedMinResolution, noiseReduction = false) {
         this.#values = values
         this.#length = length
-        this.#bounds = bounds
+        this.bounds = bounds
         this.#expectedMinResolution = expectedMinResolution
-        this.#noiseReduction = noiseReduction
     }
 }
