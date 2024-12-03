@@ -63,7 +63,8 @@ class ContinuousHistogramNoiseReduced extends ContinuousHistogram {
                 } else {
                     // f1: It's >20% of the mean of the next 10 pending
                     // values
-                    const n10mean = orderedFrequenciesReal.slice(i + 1, i + 1 + 10).reduce(
+                    const offset = i + 1
+                    const n10mean = orderedFrequenciesReal.slice(offset + 1, offset + 1 + 10).reduce(
                         (p, c) => ({t: p.t + scaler.displayY(c), c: p.c + 1}), {t: 0, c: 0})
                     if(n10mean.c && 5 * vScaled < n10mean.t / n10mean.c) {
                         lastScaled = vScaled
