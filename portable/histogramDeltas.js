@@ -1,10 +1,10 @@
 //@ts-check
-/// <reference path="histogramDeltasAny.js" />
+/// <reference path="histogramDeltasBase.js" />
 
 /**
  *
  */
-class HistogramDeltas extends HistogramDeltasAny {
+class HistogramDeltas extends HistogramDeltasBase {
     /**
      * @type {number | undefined}
      */

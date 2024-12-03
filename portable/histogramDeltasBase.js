@@ -3,8 +3,9 @@
 
 /**
  * @abstract
+ * @implements {HistogramDeltasAny}
  */
-class HistogramDeltasAny {
+class HistogramDeltasBase {
     /**
      * @type {{y: number, dF: number}[]}
      */
@@ -183,7 +184,7 @@ class HistogramDeltasAny {
     }
 
     /**
-     *
+     * @protected
      */
     clearSpanPoints() {
         this.#spanPoints = []

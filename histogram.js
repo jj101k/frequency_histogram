@@ -1,6 +1,5 @@
 //@ts-check
 /// <reference path="portable/continuousHistogram.js" />
-/// <reference path="portable/histogramDeltas.js" />
 /// <reference path="portable/positionScaler.js" />
 /// <reference path="portable/noiseReduction/histogramDeltasNoiseReduced.js" />
 /// <reference path="epwDataFormat.js" />

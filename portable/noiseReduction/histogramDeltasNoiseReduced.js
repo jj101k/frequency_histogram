@@ -1,11 +1,11 @@
 //@ts-check
-/// <reference path="../histogramDeltasAny.js" />
+/// <reference path="../histogramDeltasBase.js" />
 /// <reference path="sensorWhitelistState.js" />
 
 /**
  * This is similar but uses a whitelist of sensor points instead.
  */
-class HistogramDeltasNoiseReduced extends HistogramDeltasAny {
+class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     /**
      * @type {Record<number, SensorWhitelistState>}
      */
