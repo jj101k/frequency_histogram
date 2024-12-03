@@ -1,5 +1,5 @@
 //@ts-check
-/// <reference path="./epwDataFormat.js" />
+/// <reference path="epwDataFormat.js" />
 
 /**
  * @typedef {{type: "move", x: number, y: number}} PathMove

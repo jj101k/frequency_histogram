@@ -1,8 +1,8 @@
 //@ts-check
-/// <reference path="./renderContextCanvas.js" />
-/// <reference path="./renderContextSvg.js" />
-/// <reference path="./epwImporter.js" />
 /// <reference path="./node_modules/pathfind/Frameworker.js" />
+/// <reference path="renderContextCanvas.js" />
+/// <reference path="renderContextSvg.js" />
+/// <reference path="epwImporter.js" />
 
 function main() {
     /**

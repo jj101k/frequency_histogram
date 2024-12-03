@@ -1,8 +1,8 @@
 //@ts-check
-/// <reference path="./epwDataFormat.js" />
-/// <reference path="./histogram.js" />
-/// <reference path="./histogramRender.js" />
-/// <reference path="./positionScaler.js" />
+/// <reference path="portable/positionScaler.js" />
+/// <reference path="epwDataFormat.js" />
+/// <reference path="histogram.js" />
+/// <reference path="histogramRender.js" />
 
 /**
  * @extends {RenderContext<RenderPathSvg>}

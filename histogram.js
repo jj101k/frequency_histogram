@@ -1,10 +1,10 @@
 //@ts-check
-/// <reference path="continuousHistogram.js" />
+/// <reference path="portable/continuousHistogram.js" />
+/// <reference path="portable/histogramDeltas.js" />
+/// <reference path="portable/histogramDeltasNoiseReduced.js" />
+/// <reference path="portable/positionScaler.js" />
 /// <reference path="epwDataFormat.js" />
 /// <reference path="epwParser.js" />
-/// <reference path="histogramDeltas.js" />
-/// <reference path="histogramDeltasNoiseReduced.js" />
-/// <reference path="positionScaler.js" />
 /// <reference path="portable/types.d.ts" />
 
 /**
