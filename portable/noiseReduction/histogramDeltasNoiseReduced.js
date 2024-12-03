@@ -1,5 +1,5 @@
 //@ts-check
-/// <reference path="histogramDeltasAny.js" />
+/// <reference path="../histogramDeltasAny.js" />
 /// <reference path="sensorWhitelistState.js" />
 
 /**

@@ -1,6 +1,6 @@
 //@ts-check
+/// <reference path="noiseReduction/histogramDeltasNoiseReduced.js" />
 /// <reference path="histogramDeltas.js" />
-/// <reference path="histogramDeltasNoiseReduced.js" />
 /// <reference path="positionScaler.js" />
 /// <reference path="types.d.ts" />
 
