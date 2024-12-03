@@ -20,7 +20,7 @@ class ContinuousHistogramNoiseReduced extends ContinuousHistogram {
      * These must be in ascending numeric order
      * @returns
      */
-    #getAcceptedValues(orderedFrequenciesRealByDS) {
+    static getAcceptedValues(orderedFrequenciesRealByDS) {
         /**
          * Used to determine normal variation between points. For a plain scalar
          * value, this would be fixed, but if it's on an exponential scale (eg.
@@ -83,7 +83,8 @@ class ContinuousHistogramNoiseReduced extends ContinuousHistogram {
         // We go into noise reduction if we can.
         if(orderedFrequencies && Object.keys(orderedFrequencies).length > 1) {
             const deltaInfo = this.deltaInfo
-            return new HistogramDeltasNoiseReduced(deltaInfo, this.bounds, this.#getAcceptedValues(orderedFrequencies)).combined
+            return new HistogramDeltasNoiseReduced(deltaInfo, this.bounds,
+                ContinuousHistogramNoiseReduced.getAcceptedValues(orderedFrequencies)).combined
         } else {
             return super.combined
         }

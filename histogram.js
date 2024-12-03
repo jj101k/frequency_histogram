@@ -1,8 +1,6 @@
 //@ts-check
 /// <reference path="portable/continuousHistogram.js" />
 /// <reference path="portable/noiseReduction/continuousHistogramNoiseReduced.js" />
-/// <reference path="portable/noiseReduction/histogramDeltasNoiseReduced.js" />
-/// <reference path="portable/positionScaler.js" />
 /// <reference path="epwDataFormat.js" />
 /// <reference path="epwParser.js" />
 /// <reference path="portable/types.d.ts" />
@@ -55,58 +53,6 @@ class Histogram {
 
     /**
      *
-     * @param {Record<number, {y: number, f: number}[]>} orderedFrequenciesRealByDS
-     * @returns
-     */
-    #getAcceptedValues(orderedFrequenciesRealByDS) {
-        const scaler = new FrequencyPositionScaler(this.#fieldInfo.field)
-        /**
-         * @type {Record<number, Set<number>>}
-         */
-        const acceptedValuesByDS = {}
-        for(const [ds, orderedFrequenciesReal] of Object.entries(orderedFrequenciesRealByDS)) {
-            if(orderedFrequenciesReal.length <= 2) {
-                acceptedValuesByDS[ds] = new Set(orderedFrequenciesReal.map(f => f.y))
-                continue
-            }
-            /**
-             * @type {Set<number>}
-             */
-            const acceptedValues = new Set()
-            let last = orderedFrequenciesReal[0]
-            acceptedValues.add(last.y)
-
-            let i = 0
-            for (const v of orderedFrequenciesReal.slice(1)) {
-                // Note these values are flipped
-                const dv = scaler.displayY(v)
-                // f0: It's >20% of the previous accepted value
-                if (5 * dv < scaler.displayY(last)) {
-                    last = v
-                    acceptedValues.add(v.y)
-                } else {
-                    // f1: It's >20% of the mean of the next 10 pending
-                    // values
-                    const n10mean = orderedFrequenciesReal.slice(i+1, i+1+10).reduce((p, c) => ({t: p.t + scaler.displayY(c), c: p.c + 1}), {t: 0, c: 0})
-                    if(n10mean.c && 5 * dv < n10mean.t / n10mean.c) {
-                        last = v
-                        acceptedValues.add(v.y)
-                    }
-                }
-                i++
-            }
-            if(acceptedValues.size < 2) {
-                console.warn(orderedFrequenciesReal, acceptedValues)
-                throw new Error(`Internal error: noise reduction produced ${acceptedValues.size} values from ${orderedFrequenciesReal.length}`)
-            }
-            acceptedValuesByDS[ds] = acceptedValues
-        }
-
-        return acceptedValuesByDS
-    }
-
-    /**
-     *
      * @param {EpwNamedNumberField} field
      * @param {boolean} noiseReduction
      * @returns
@@ -123,7 +69,7 @@ class Histogram {
          */
         let orderedFrequenciesByDS
         if(noiseReduction) {
-            const acceptedValues = this.#getAcceptedValues(orderedFrequenciesRealByDS)
+            const acceptedValues = ContinuousHistogramNoiseReduced.getAcceptedValues(orderedFrequenciesRealByDS)
 
             orderedFrequenciesByDS = Object.fromEntries(Object.entries(orderedFrequenciesRealByDS).map(([ds, frequencies]) => [ds, frequencies.filter(v => acceptedValues[ds]?.has(v.y))]))
         } else {
