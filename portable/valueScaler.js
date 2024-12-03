@@ -1,5 +1,8 @@
 //@ts-check
 /**
+ * A scaler which will fix the target values in at the supplied scale
+ *
+ * @abstract
  * @template F
  */
 class ValueScaler {
