@@ -177,6 +177,8 @@ class HistogramPositionScaler extends PositionScaler {
  */
 
 /**
+ * This just maps the input values to themselves
+ *
  * @extends {PositionScaler<RawDatum>}
  */
 class RawPositionScaler extends PositionScaler {
@@ -194,6 +196,8 @@ class RawPositionScaler extends PositionScaler {
 }
 
 /**
+ * This maps the input values to themselves except that x is modulo 24.
+ *
  * @extends {RawPositionScaler}
  */
 class RawPositionScalerOverlap extends RawPositionScaler {
