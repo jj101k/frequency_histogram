@@ -17,7 +17,7 @@ class ContinuousHistogramNoiseReduced extends ContinuousHistogram {
      * are not noise are grouped and returned.
      *
      * @param {Record<number, {y: number, f: number}[]>} orderedFrequenciesRealByDS
-     * These must be in descending numeric order
+     * These must be in ascending numeric order
      * @returns
      */
     #getAcceptedValues(orderedFrequenciesRealByDS) {
