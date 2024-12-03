@@ -57,7 +57,7 @@ class ContinuousHistogramNoiseReduced extends ContinuousHistogram {
                 // Note these values are flipped
                 const vScaled = scaler.displayY(v)
                 // f0: It's >20% of the previous accepted value
-                if (vScaled < lastScaled * 0.20) {
+                if (vScaled > lastScaled * 0.20) {
                     lastScaled = vScaled
                     acceptedValues.add(v.y)
                 } else {
