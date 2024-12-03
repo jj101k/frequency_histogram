@@ -2,7 +2,7 @@
 /// <reference path="histogramDeltas.js" />
 /// <reference path="histogramDeltasNoiseReduced.js" />
 /// <reference path="positionScaler.js" />
-/// <reference path="types.d.ts" />
+/// <reference path="../types.d.ts" />
 
 /**
  * Handles functionality related specifically to continuous histograms
