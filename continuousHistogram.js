@@ -1,5 +1,4 @@
 //@ts-check
-/// <reference path="epwDataFormat.js" />
 /// <reference path="histogramDeltas.js" />
 /// <reference path="histogramDeltasNoiseReduced.js" />
 /// <reference path="positionScaler.js" />
@@ -53,7 +52,7 @@ class ContinuousHistogram {
     #expectedMinResolution
 
     /**
-     * @type {{field: EpwNamedNumberField, expectedMinResolution?: number | undefined}}
+     * @type {{field: valueConfiguration, expectedMinResolution?: number | undefined}}
      */
     #fieldInfo
 

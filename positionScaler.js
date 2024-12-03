@@ -1,5 +1,6 @@
 //@ts-check
 /// <reference path="./valueScaler.js" />
+/// <reference path="./types.d.ts" />
 
 /**
  * @abstract
@@ -77,7 +78,7 @@ class FrequencyPositionScaler extends PositionScaler {
 
     /**
      *
-     * @param {{exponentialValues?: boolean, expectsExponentialFrequency?: boolean}} field
+     * @param {valueConfiguration} field
      * @param {boolean | undefined} preferLog
      */
     constructor(field, preferLog = undefined) {
