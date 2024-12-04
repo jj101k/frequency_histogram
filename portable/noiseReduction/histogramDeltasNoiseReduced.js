@@ -1,6 +1,6 @@
 //@ts-check
 /// <reference path="../histogramDeltasBase.js" />
-/// <reference path="sensorWhitelistState.js" />
+/// <reference path="dataSourceZeroWidthNeighbours.js" />
 
 /**
  * This is similar but uses a whitelist of sensor points instead.
@@ -75,7 +75,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
-     * @type {Record<number, SensorWhitelistState>}
+     * @type {Record<number, DataSourceZeroWidthNeighbours>}
      */
     #spwStates
     /**
@@ -218,7 +218,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     constructor(deltaInfo, numberOptions, sensorPointWhitelist) {
         super(deltaInfo, numberOptions)
         this.#spwStates = Object.fromEntries(
-            Object.entries(sensorPointWhitelist).map(([ds, whitelist]) => [ds, new SensorWhitelistState(whitelist)])
+            Object.entries(sensorPointWhitelist).map(([ds, whitelist]) => [ds, new DataSourceZeroWidthNeighbours(whitelist)])
         )
         const allPoints = new Set()
         for(const whitelist of Object.values(sensorPointWhitelist)) {
