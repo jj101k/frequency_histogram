@@ -34,8 +34,9 @@ class HistogramDeltas extends HistogramDeltasBase {
         } else if (this.allSpanPoints.length) {
             possibleNextY.push(this.allSpanPoints[0].y)
         }
-        if (this.allZeroWidthPoints.length) {
-            possibleNextY.push(this.allZeroWidthPoints[0].y)
+        const allZeroWidthPoints = this.allZeroWidthPoints
+        if (allZeroWidthPoints.length) {
+            possibleNextY.push(allZeroWidthPoints[0].y)
         }
         if (possibleNextY.length) {
             nextY = Math.min(...possibleNextY)
