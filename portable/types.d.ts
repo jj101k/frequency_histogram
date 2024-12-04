@@ -7,7 +7,8 @@ interface DeltaInfo {
      */
     deltas: {y: number, dF: number, zeroSpan?: undefined}[]
     /**
-     *
+     * These are points which have zero width, ie. the value does not change
+     * between two adjacent time points. These must be sorted by y value (ascending).
      */
     zeroWidthPoints: {y: number, zeroSpan: number, dataSource: number}[]
     /**

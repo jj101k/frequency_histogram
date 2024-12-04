@@ -81,6 +81,14 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     /**
      * This is where a zero-width point could fit. This will decrease in size as
      * points are enumerated.
+     *
+     * Initially, this is the set of all known points; once a point is certain
+     * not to be useful in placing another zero-width point, it gets dropped.
+     *
+     * Zero-width points would be placed between two of these, typically.
+     *
+     * NOTE: this is only used if the data source doesn't have enough unique
+     * points to be used for that purpose directly.
      */
     #zeroBoundPoints
     /**
@@ -89,7 +97,9 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     #zeroDeltas = []
 
     /**
+     * Adds two points to zeroDeltas, before and after the current zero point.
      *
+     * This will discard the current zero point.
      */
     #addZeroPointFull() {
         const zeroPoint = this.nextZeroPoint
@@ -108,6 +118,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
+     * This produces a small span for a zero-width point, so that it is not
+     * infinitely high.
      *
      * @param {{y: number, zeroSpan: number, dataSource: number}} zeroPoint
      * @returns

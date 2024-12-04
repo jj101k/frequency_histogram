@@ -24,7 +24,8 @@ class HistogramDeltasBase {
     #spanPoints
 
     /**
-     *
+     * These are points which have zero width, ie. the value does not change
+     * between two adjacent time points. These must be sorted by y value (ascending).
      */
     #zeroWidthPoints
 
@@ -52,6 +53,8 @@ class HistogramDeltasBase {
     }
 
     /**
+     * Pops a zero point off the stack. If the first few have an identical y
+     * value, they will be coalesced into one with an appropriately widened zero span.
      *
      * @returns
      */
@@ -141,7 +144,8 @@ class HistogramDeltasBase {
      * @protected
      *
      * This estimates where the next (higher) point would be, not exceeding the
-     * maximum if supplied.
+     * maximum if supplied. This is used where a point is already the highest in
+     * a set, although it's also safe to use otherwise.
      *
      * @param {number} lastY
      * @param {number} current
@@ -193,6 +197,9 @@ class HistogramDeltasBase {
     /**
      * @protected
      *
+     * Produces the before and after points for a zero-width point, based on
+     * its actual predecessor and, ideally, its actual successor.
+     *
      * @param {number} lastY
      * @param {number} current
      * @param {number | undefined} nextY
@@ -215,6 +222,11 @@ class HistogramDeltasBase {
 
     /**
      * @protected
+     *
+     * Steps forward by one zero point, putting the one with the next y value
+     * into nextZeroPoint
+     *
+     * @see nextZeroPoint
      */
     getNextZeroPoint() {
         this.nextZeroPoint = this.#shiftZeroPoints()

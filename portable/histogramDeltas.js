@@ -11,7 +11,9 @@ class HistogramDeltas extends HistogramDeltasBase {
     #lastY
 
     /**
+     * Adds two points to zeroDeltas, before and after the current zero point.
      *
+     * This will discard the current zero point.
      */
     #addZeroPointFull() {
         const zeroPoint = this.nextZeroPoint
