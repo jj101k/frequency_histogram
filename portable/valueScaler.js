@@ -212,8 +212,8 @@ class LogValueScaler extends ValueScaler {
  * @extends {ValueScaler}
  *
  * This considers the value, but practically just steps up by 1 whenever it
- * changes (increases). This is used for non-scalar data, eg. discrete states
- * encoded in a number.
+ * changes. This is used for non-scalar data, eg. discrete states encoded in a
+ * number.
  */
 class StaticValueScaler extends ValueScaler {
     reset() {
@@ -238,7 +238,7 @@ class StaticValueScaler extends ValueScaler {
     scale(d) {
         if(this.#lastY === undefined) {
             this.#lastY = d
-        } else if(d > this.#lastY) {
+        } else if(d != this.#lastY) {
             this.#value++
         }
         return this.#value * this.scaleFactor
