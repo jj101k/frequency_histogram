@@ -8,12 +8,14 @@
 class PositionScaler {
     /**
      * @abstract
+     * @protected
      * @type {ValueScaler<F>}
      */
     xScaler
 
     /**
      * @abstract
+     * @protected
      * @type {ValueScaler<F>}
      */
     yScaler
@@ -36,6 +38,25 @@ class PositionScaler {
      */
     displayY(d) {
         return this.yScaler.scale(d)
+    }
+
+    /**
+     *
+     * @param {F[]} values
+     * @returns
+     */
+    prepareXScaler(values) {
+        return this.xScaler.prepare(values)
+    }
+
+    /**
+     *
+     * @param {F[]} values
+     * @param {number} [scaleTo]
+     * @returns
+     */
+    prepareYScaler(values, scaleTo) {
+        return this.yScaler.prepare(values, scaleTo)
     }
 
     /**

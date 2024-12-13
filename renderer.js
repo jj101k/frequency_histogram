@@ -193,11 +193,11 @@ class Renderer {
      */
     renderValues(values, fitting) {
         // The X scaler is fixed - it's whatever it naturally is.
-        const xRange = this.scaler.xScaler.prepare(values)
+        const xRange = this.scaler.prepareXScaler(values)
         // The Y scaler may be rescaled
         const expandedYValues = [...values, ...(fitting ?? [])]
         const scaleYTo = xRange / 4 // TODO This is a heuristic value
-        this.scaler.yScaler.prepare(expandedYValues, scaleYTo)
+        this.scaler.prepareYScaler(expandedYValues, scaleYTo)
 
         const minX = this.scaler.displayX(values[0])
         const maxX = this.scaler.displayX(values[values.length - 1])
