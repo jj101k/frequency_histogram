@@ -225,8 +225,10 @@ class StaticValueScaler extends ValueScaler {
     #value = 1
     /**
      * @type {number | undefined}
+     *
+     * The literal value from the last iteration
      */
-    #lastY
+    #lastStoredValue
     valueRange(values) {
         return {min: 0, max: values.length - 1}
     }
@@ -236,9 +238,9 @@ class StaticValueScaler extends ValueScaler {
      * @returns {number}
      */
     scale(d) {
-        if(this.#lastY === undefined) {
-            this.#lastY = d
-        } else if(d != this.#lastY) {
+        if(this.#lastStoredValue === undefined) {
+            this.#lastStoredValue = d
+        } else if(d != this.#lastStoredValue) {
             this.#value++
         }
         return this.#value * this.scaleFactor
