@@ -1,4 +1,3 @@
-//@ts-check
 /// <reference path="portable/positionScaler.js" />
 /// <reference path="epwDataFormat.js" />
 /// <reference path="histogram.js" />

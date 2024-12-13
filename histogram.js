@@ -1,4 +1,3 @@
-//@ts-check
 /// <reference path="portable/continuousHistogram.js" />
 /// <reference path="portable/noiseReduction/continuousHistogramNoiseReduced.js" />
 /// <reference path="epwDataFormat.js" />

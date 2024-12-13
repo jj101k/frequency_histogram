@@ -1,5 +1,3 @@
-//@ts-check
-
 /**
  * This is the set of points which could be neighbours to a zero-width point.
  * This is designed to be used destructively, with values discarded as you go.

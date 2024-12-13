@@ -1,4 +1,3 @@
-//@ts-check
 /// <reference path="histogramDeltasNoiseReduced.js" />
 /// <reference path="../continuousHistogram.js" />
 /// <reference path="../positionScaler.js" />

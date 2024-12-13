@@ -1,4 +1,3 @@
-//@ts-check
 /// <reference path="./node_modules/pathfind/Frameworker.js" />
 /// <reference path="renderContextCanvas.js" />
 /// <reference path="renderContextSvg.js" />

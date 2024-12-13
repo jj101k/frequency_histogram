@@ -1,4 +1,3 @@
-//@ts-check
 /// <reference path="../histogramDeltasBase.js" />
 /// <reference path="../positionScaler.js" />
 /// <reference path="dataSourceZeroWidthNeighbours.js" />

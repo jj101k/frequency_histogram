@@ -1,4 +1,3 @@
-//@ts-check
 /**
  * A scaler which will fix the target values in at the supplied scale
  *

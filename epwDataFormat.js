@@ -1,6 +1,5 @@
 // Originally from "Auxiliary Programs" on the EnergyPlus web site
 
-//@ts-check
 /// <reference path="portable/types.d.ts" />
 
 /**

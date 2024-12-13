@@ -1,4 +1,3 @@
-//@ts-check
 /// <reference path="valueScaler.js" />
 /// <reference path="types.d.ts" />
 
