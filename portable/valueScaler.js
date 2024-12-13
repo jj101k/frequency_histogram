@@ -217,18 +217,18 @@ class LogValueScaler extends ValueScaler {
  */
 class StaticValueScaler extends ValueScaler {
     reset() {
-        this.#value = 1
+        this.#outValue = 1
     }
-    /**
-     *
-     */
-    #value = 1
     /**
      * @type {number | undefined}
      *
      * The literal value from the last iteration
      */
     #lastStoredValue
+    /**
+     *
+     */
+    #outValue = 1
 
     /**
      * @protected
@@ -249,8 +249,8 @@ class StaticValueScaler extends ValueScaler {
         if(this.#lastStoredValue === undefined) {
             this.#lastStoredValue = d
         } else if(d != this.#lastStoredValue) {
-            this.#value++
+            this.#outValue++
         }
-        return this.#value * this.scaleFactor
+        return this.#outValue * this.scaleFactor
     }
 }
