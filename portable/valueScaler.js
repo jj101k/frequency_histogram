@@ -1,12 +1,12 @@
 /**
- * A scaler which will fix the target values in at the supplied scale
+ * A scaler which will fit the target values in at the supplied scale
  *
  * @abstract
  * @template F
  */
 class ValueScaler {
     /**
-     * @protected
+     * @protected If set, this will multiply the values
      */
     scaleFactor = 1
 
@@ -14,7 +14,8 @@ class ValueScaler {
      * @protected
      *
      * @param {F[]} values
-     * @param {number} [scaleTo]
+     * @param {number} [scaleTo] If set, the range size will be adjusted such
+     * that max-min is scaleTo.
      */
     prepareScale(values, scaleTo) {
         const {min, max} = this.valueRange(values)
@@ -38,7 +39,7 @@ class ValueScaler {
      * @protected
      *
      * @param {F[]} values
-     * @returns {{min: number, max: number}}
+     * @returns {{min: number, max: number}} The current (scaled) value range.
      */
     valueRange(values) {
         let min = Infinity
@@ -69,6 +70,8 @@ class ValueScaler {
     /**
      * @abstract
      *
+     * Scales a single value
+     *
      * @param {F} d
      * @returns {number}
      */
@@ -78,6 +81,11 @@ class ValueScaler {
 }
 
 /**
+ * Emits the negative form of the value. This might be used for rendering where
+ * the natural presentation may be upside-down.
+ *
+ * This operates on the frequency (f).
+ *
  * @extends {ValueScaler<{f: number}>}
  */
 class FInverseValueScaler extends ValueScaler {
@@ -92,6 +100,13 @@ class FInverseValueScaler extends ValueScaler {
 }
 
 /**
+ * Produces the log of the value. This doesn't support negative numbers, but
+ * does support 0 as a special case.
+ *
+ * This might be used where the data is normally exponential.
+ *
+ * This operates on the frequency (f).
+ *
  * @extends {ValueScaler<{f: number}>}
  */
 class FInverseLogValueScaler extends ValueScaler {
@@ -107,6 +122,8 @@ class FInverseLogValueScaler extends ValueScaler {
 }
 
 /**
+ * This operates on the value (x).
+ *
  * @extends {ValueScaler<{x: number}>}
  */
 class XLinearValueScaler extends ValueScaler {
@@ -121,6 +138,11 @@ class XLinearValueScaler extends ValueScaler {
 }
 
 /**
+ * This operates on the value (x), but keeps it in the range 0 <= x < modulus.
+ * This would produce a folded graph and is expected to be used to describe 24 hours.
+ *
+ * This only operates correctly on integers.
+ *
  * @extends {ValueScaler<{x: number}>}
  */
 class XModulusValueScaler extends ValueScaler {
@@ -128,6 +150,16 @@ class XModulusValueScaler extends ValueScaler {
      *
      */
     #modulus
+
+    /**
+     * @protected
+     *
+     * As a special exception, this emits what the range would be, regardless of
+     * what the values are.
+     *
+     * @param {{x: number}[]} values
+     * @returns
+     */
     valueRange(values) {
         return {min: 0, max: 23}
     }
@@ -150,6 +182,8 @@ class XModulusValueScaler extends ValueScaler {
 }
 
 /**
+ * This operates on the value (y).
+ *
  * @extends {ValueScaler<{y: number}>}
  */
 class YLinearValueScaler extends ValueScaler {
@@ -164,6 +198,15 @@ class YLinearValueScaler extends ValueScaler {
 }
 
 /**
+ * Produces the log of the value. If the first value is nonpositive, this will
+ * be offset against that value, eg. if you have a first value of -3 the offset
+ * will be 4. This is only used to adjust the base for the logarithm operation,
+ * and the output will still be of the expected scale range.
+ *
+ * This might be used where the data is normally exponential.
+ *
+ * This operates on the value (y).
+ *
  * @extends {ValueScaler<HistogramDatum>}
  */
 class YLogValueScaler extends ValueScaler {
@@ -192,6 +235,10 @@ class YLogValueScaler extends ValueScaler {
 
 /**
  * @extends {ValueScaler<{y: number}>}
+ *
+ * This considers the value (y), but practically just steps up by 1 whenever y
+ * changes (increases). This is used for non-scalar data, eg. discrete states
+ * encoded in a number.
  */
 class YStaticValueScaler extends ValueScaler {
     reset() {
