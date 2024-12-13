@@ -229,6 +229,14 @@ class StaticValueScaler extends ValueScaler {
      * The literal value from the last iteration
      */
     #lastStoredValue
+
+    /**
+     * @protected
+     * @todo This should use the number of distinct values
+     *
+     * @param {number[]} values
+     * @returns
+     */
     valueRange(values) {
         return {min: 0, max: values.length - 1}
     }
