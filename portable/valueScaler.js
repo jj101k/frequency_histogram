@@ -161,7 +161,7 @@ class XModulusValueScaler extends ValueScaler {
      * @returns
      */
     valueRange(values) {
-        return {min: 0, max: 23}
+        return {min: 0, max: this.#modulus - 1}
     }
     /**
      *
