@@ -9,16 +9,38 @@ class PositionScaler {
     /**
      * @abstract
      * @protected
-     * @type {ValueScaler<F>}
+     * @type {ValueScaler}
      */
     xScaler
 
     /**
      * @abstract
      * @protected
-     * @type {ValueScaler<F>}
+     * @type {ValueScaler}
      */
     yScaler
+
+    /**
+     * @protected
+     * @abstract
+     *
+     * @param {F} datum
+     * @returns {number}
+     */
+    xMapper(datum) {
+        throw new Error("Not implemented")
+    }
+
+    /**
+     * @protected
+     * @abstract
+     *
+     * @param {F} datum
+     * @returns {number}
+     */
+    yMapper(datum) {
+        throw new Error("Not implemented")
+    }
 
     /**
      * @abstract
@@ -27,7 +49,7 @@ class PositionScaler {
      * @returns {number}
      */
     displayX(d) {
-        return this.xScaler.scale(d)
+        return this.xScaler.scale(this.xMapper(d))
     }
 
     /**
@@ -37,7 +59,7 @@ class PositionScaler {
      * @returns {number}
      */
     displayY(d) {
-        return this.yScaler.scale(d)
+        return this.yScaler.scale(this.yMapper(d))
     }
 
     /**
@@ -46,7 +68,7 @@ class PositionScaler {
      * @returns
      */
     prepareXScaler(values) {
-        return this.xScaler.prepare(values)
+        return this.xScaler.prepare(values.map(v => this.xMapper(v)))
     }
 
     /**
@@ -56,7 +78,7 @@ class PositionScaler {
      * @returns
      */
     prepareYScaler(values, scaleTo) {
-        return this.yScaler.prepare(values, scaleTo)
+        return this.yScaler.prepare(values.map(v => this.yMapper(v)), scaleTo)
     }
 
     /**
@@ -97,6 +119,26 @@ class FrequencyPositionScaler extends PositionScaler {
     #preferLog
 
     /**
+     * @protected
+     *
+     * @param {HistogramDatum} datum
+     * @returns
+     */
+    xMapper(datum) {
+        return datum.y
+    }
+
+    /**
+     * @protected
+     *
+     * @param {HistogramDatum} datum
+     * @returns
+     */
+    yMapper(datum) {
+        return datum.f
+    }
+
+    /**
      *
      * @param {valueConfiguration} field
      * @param {boolean | undefined} preferLog
@@ -105,8 +147,8 @@ class FrequencyPositionScaler extends PositionScaler {
         super()
         this.#field = field
         this.#preferLog = preferLog
-        this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new YLogValueScaler() : new YLinearValueScaler()
-        this.yScaler = this.#field.expectsExponentialFrequency ? new FInverseLogValueScaler() : new FInverseValueScaler()
+        this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new LogValueScaler() : new LinearValueScaler()
+        this.yScaler = this.#field.expectsExponentialFrequency ? new InverseLogValueScaler() : new InverseValueScaler()
     }
 
     /**
@@ -153,6 +195,26 @@ class HistogramPositionScaler extends PositionScaler {
     #preferLog
 
     /**
+     * @protected
+     *
+     * @param {HistogramDatum} datum
+     * @returns
+     */
+    xMapper(datum) {
+        return datum.y
+    }
+
+    /**
+     * @protected
+     *
+     * @param {HistogramDatum} datum
+     * @returns
+     */
+    yMapper(datum) {
+        return datum.f
+    }
+
+    /**
      *
      * @param {{exponentialValues?: boolean, expectsExponentialFrequency?: boolean, isScalar?: boolean}} field
      * @param {boolean | undefined} preferLog
@@ -162,11 +224,11 @@ class HistogramPositionScaler extends PositionScaler {
         this.#field = field
         this.#preferLog = preferLog
         if(this.#field.isScalar) {
-            this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new YLogValueScaler() : new YLinearValueScaler()
+            this.xScaler = this.#preferLog ?? this.#field.exponentialValues ? new LogValueScaler() : new LinearValueScaler()
         } else {
-            this.xScaler = new YStaticValueScaler()
+            this.xScaler = new StaticValueScaler()
         }
-        this.yScaler = this.#field.expectsExponentialFrequency ? new FInverseLogValueScaler() : new FInverseValueScaler()
+        this.yScaler = this.#field.expectsExponentialFrequency ? new InverseLogValueScaler() : new InverseValueScaler()
     }
 
     /**
@@ -203,8 +265,28 @@ class HistogramPositionScaler extends PositionScaler {
  * @extends {PositionScaler<RawDatum>}
  */
 class RawPositionScaler extends PositionScaler {
-    xScaler = new XLinearValueScaler()
-    yScaler = new YLinearValueScaler()
+    xScaler = new LinearValueScaler()
+    yScaler = new LinearValueScaler()
+
+    /**
+     * @protected
+     *
+     * @param {RawDatum} datum
+     * @returns
+     */
+    xMapper(datum) {
+        return datum.x
+    }
+
+    /**
+     * @protected
+     *
+     * @param {RawDatum} datum
+     * @returns
+     */
+    yMapper(datum) {
+        return datum.y
+    }
 
     /**
      * @param {number} x
@@ -222,5 +304,5 @@ class RawPositionScaler extends PositionScaler {
  * @extends {RawPositionScaler}
  */
 class RawPositionScalerOverlap extends RawPositionScaler {
-    xScaler = new XModulusValueScaler(24)
+    xScaler = new ModulusValueScaler(24)
 }

@@ -2,7 +2,6 @@
  * A scaler which will fit the target values in at the supplied scale
  *
  * @abstract
- * @template F
  */
 class ValueScaler {
     /**
@@ -13,7 +12,7 @@ class ValueScaler {
     /**
      * @protected
      *
-     * @param {F[]} values
+     * @param {number[]} values
      * @param {number} [scaleTo] If set, the range size will be adjusted such
      * that max-min is scaleTo.
      */
@@ -38,7 +37,7 @@ class ValueScaler {
     /**
      * @protected
      *
-     * @param {F[]} values
+     * @param {number[]} values
      * @returns {{min: number, max: number}} The current (scaled) value range.
      */
     valueRange(values) {
@@ -59,7 +58,7 @@ class ValueScaler {
 
     /**
      *
-     * @param {F[]} values
+     * @param {number[]} values
      * @param {number} [scaleTo]
      * @returns {number}
      */
@@ -72,7 +71,7 @@ class ValueScaler {
      *
      * Scales a single value
      *
-     * @param {F} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
@@ -84,18 +83,16 @@ class ValueScaler {
  * Emits the negative form of the value. This might be used for rendering where
  * the natural presentation may be upside-down.
  *
- * This operates on the frequency (f).
- *
- * @extends {ValueScaler<{f: number}>}
+ * @extends {ValueScaler}
  */
-class FInverseValueScaler extends ValueScaler {
+class InverseValueScaler extends ValueScaler {
     /**
      *
-     * @param {{f: number}} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
-        return -d.f * this.scaleFactor
+        return -d * this.scaleFactor
     }
 }
 
@@ -105,47 +102,43 @@ class FInverseValueScaler extends ValueScaler {
  *
  * This might be used where the data is normally exponential.
  *
- * This operates on the frequency (f).
- *
- * @extends {ValueScaler<{f: number}>}
+ * @extends {ValueScaler}
  */
-class FInverseLogValueScaler extends ValueScaler {
+class InverseLogValueScaler extends ValueScaler {
     /**
      *
-     * @param {{f: number}} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
         // 0 may legitimately appear in the middle of exponential frequency sets
-        return -Math.log(d.f + 1) * this.scaleFactor
+        return -Math.log(d + 1) * this.scaleFactor
     }
 }
 
 /**
- * This operates on the value (x).
- *
- * @extends {ValueScaler<{x: number}>}
+ * @extends {ValueScaler}
  */
-class XLinearValueScaler extends ValueScaler {
+class LinearValueScaler extends ValueScaler {
     /**
      *
-     * @param {{x: number}} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
-        return d.x * this.scaleFactor
+        return d * this.scaleFactor
     }
 }
 
 /**
- * This operates on the value (x), but keeps it in the range 0 <= x < modulus.
+ * This keeps the value in the range 0 <= value < modulus.
  * This would produce a folded graph and is expected to be used to describe 24 hours.
  *
  * This only operates correctly on integers.
  *
- * @extends {ValueScaler<{x: number}>}
+ * @extends {ValueScaler}
  */
-class XModulusValueScaler extends ValueScaler {
+class ModulusValueScaler extends ValueScaler {
     /**
      *
      */
@@ -157,7 +150,7 @@ class XModulusValueScaler extends ValueScaler {
      * As a special exception, this emits what the range would be, regardless of
      * what the values are.
      *
-     * @param {{x: number}[]} values
+     * @param {number[]} values
      * @returns
      */
     valueRange(values) {
@@ -173,27 +166,11 @@ class XModulusValueScaler extends ValueScaler {
     }
     /**
      *
-     * @param {{x: number}} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
-        return d.x % this.#modulus * this.scaleFactor
-    }
-}
-
-/**
- * This operates on the value (y).
- *
- * @extends {ValueScaler<{y: number}>}
- */
-class YLinearValueScaler extends ValueScaler {
-    /**
-     *
-     * @param {{y: number}} d
-     * @returns {number}
-     */
-    scale(d) {
-        return d.y * this.scaleFactor
+        return d % this.#modulus * this.scaleFactor
     }
 }
 
@@ -205,42 +182,40 @@ class YLinearValueScaler extends ValueScaler {
  *
  * This might be used where the data is normally exponential.
  *
- * This operates on the value (y).
- *
- * @extends {ValueScaler<HistogramDatum>}
+ * @extends {ValueScaler}
  */
-class YLogValueScaler extends ValueScaler {
+class LogValueScaler extends ValueScaler {
     /**
      *
      */
     #logOffset = 0
     /**
      *
-     * @param {HistogramDatum[]} values
+     * @param {number[]} values
      * @param {number} [scaleTo]
      */
     prepare(values, scaleTo) {
-        this.#logOffset = values[0].y > 0 ? 0 : (1 - values[0].y)
+        this.#logOffset = values[0] > 0 ? 0 : (1 - values[0])
         return this.prepareScale(values, scaleTo)
     }
     /**
      *
-     * @param {HistogramDatum} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
-        return Math.log(d.y + this.#logOffset) * this.scaleFactor
+        return Math.log(d + this.#logOffset) * this.scaleFactor
     }
 }
 
 /**
- * @extends {ValueScaler<{y: number}>}
+ * @extends {ValueScaler}
  *
- * This considers the value (y), but practically just steps up by 1 whenever y
+ * This considers the value, but practically just steps up by 1 whenever it
  * changes (increases). This is used for non-scalar data, eg. discrete states
  * encoded in a number.
  */
-class YStaticValueScaler extends ValueScaler {
+class StaticValueScaler extends ValueScaler {
     reset() {
         this.#value = 1
     }
@@ -257,13 +232,13 @@ class YStaticValueScaler extends ValueScaler {
     }
     /**
      *
-     * @param {{y: number}} d
+     * @param {number} d
      * @returns {number}
      */
     scale(d) {
         if(this.#lastY === undefined) {
-            this.#lastY = d.y
-        } else if(d.y > this.#lastY) {
+            this.#lastY = d
+        } else if(d > this.#lastY) {
             this.#value++
         }
         return this.#value * this.scaleFactor
