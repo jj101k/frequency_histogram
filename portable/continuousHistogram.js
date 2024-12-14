@@ -2,7 +2,7 @@
 /// <reference path="types.d.ts" />
 
 /**
- * Handles functionality related specifically to continuous histograms
+ * Handles functionality related specifically to continuous histograms.
  */
 class ContinuousHistogram {
     /**
@@ -272,7 +272,9 @@ class ContinuousHistogram {
 
     /**
      *
-     * @param {Iterable<{x: number, y: number, dataSource: number}>} values
+     * @param {Iterable<{x: number, y: number, dataSource: number}>} values The
+     * underlying values, where x increases and y is the value to be considered.
+     * This will assume that x values are always the same distance apart.
      * @param {number} length
      * @param {{maximum?: number, minimum?: number}} [bounds] Used to ensure that
      * out-of-range points aren't emitted

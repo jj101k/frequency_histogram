@@ -193,7 +193,7 @@ class Histogram {
     }
 
     /**
-     *
+     * The underlying values, where x increases and y is the value to be considered.
      */
     get rawValues() {
         return this.#parser.getValues(this.fieldInfo.field, this.#limit, this.#filter)
