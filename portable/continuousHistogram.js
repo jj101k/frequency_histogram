@@ -61,7 +61,7 @@ class ContinuousHistogram {
 
     /**
      *
-     * @returns
+     * @returns {DeltaInfo}
      */
     #getDeltas() {
         const dataPoints = this.rawValues
@@ -201,8 +201,7 @@ class ContinuousHistogram {
          * @type {{y: number, f: number}[]}
          */
         const cumulativeDeltas = []
-        const combined = this.combined
-        const combinedDeltas = combined.combinedDeltas
+        const combinedDeltas = this.combined
         if(combinedDeltas.length) {
             let f = 0
             for(const d of combinedDeltas) {

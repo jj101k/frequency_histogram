@@ -236,7 +236,7 @@ class HistogramDeltasBase {
      */
     get combined() {
         this.buildCombined()
-        return { combinedDeltas: this.#combinedDeltas, zeroDeltaSpan: this.zeroDeltaSpan }
+        return this.#combinedDeltas
     }
 
     /**
