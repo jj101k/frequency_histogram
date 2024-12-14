@@ -280,7 +280,7 @@ class ContinuousHistogram {
      * out-of-range points aren't emitted
      * @param {number} [expectedMinResolution]
      */
-    constructor(values, length, bounds, expectedMinResolution, noiseReduction = false) {
+    constructor(values, length, bounds, expectedMinResolution) {
         this.#values = values
         this.#length = length
         this.bounds = bounds
