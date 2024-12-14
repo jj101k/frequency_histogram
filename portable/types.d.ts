@@ -25,11 +25,6 @@ type numberOptions = {units?: string, minimum?: number, maximum?: number, enumer
 /**
  *
  */
-type HistogramDatum = {f: number, y: number}
-
-/**
- *
- */
 type valueConfiguration = {exponentialValues?: boolean, expectsExponentialFrequency?: boolean}
 
 /**

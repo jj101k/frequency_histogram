@@ -1,6 +1,5 @@
 /// <reference path="histogramDeltasNoiseReduced.js" />
 /// <reference path="../continuousHistogram.js" />
-/// <reference path="../positionScaler.js" />
 /// <reference path="../types.d.ts" />
 
 /**

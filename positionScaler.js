@@ -1,4 +1,5 @@
-/// <reference path="valueScaler.js" />
+/// <reference path="portable/valueScaler.js" />
+/// <reference path="portable/types.d.ts" />
 /// <reference path="types.d.ts" />
 
 /**

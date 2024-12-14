@@ -1,5 +1,4 @@
 /// <reference path="../histogramDeltasBase.js" />
-/// <reference path="../positionScaler.js" />
 /// <reference path="dataSourceZeroWidthNeighbours.js" />
 
 /**
@@ -23,7 +22,9 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
          * will depend what the previous point is. There may be other scales in
          * use in future.
          */
-        const scaler = new FrequencyPositionScaler(valueConfig)
+        const scaler = valueConfig.expectsExponentialFrequency ?
+            new InverseLogValueScaler() :
+            new InverseValueScaler()
         /**
          * @type {{[dataSource: number]: Set<number>}} Which values look valid
          * on each data source
@@ -46,11 +47,11 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
              */
             const start = orderedFrequenciesReal[0]
             acceptedValues.add(start.y)
-            const startScaled = scaler.displayY(start)
+            const startScaled = scaler.scale(start.f)
             let lastScaled = 0
 
             for (const [i, v] of orderedFrequenciesReal.slice(1).entries()) {
-                const vScaled = scaler.displayY(v) - startScaled
+                const vScaled = scaler.scale(v.f) - startScaled
                 // f0: It's not more than 5x the previous accepted value
                 if (vScaled < lastScaled * 5) {
                     lastScaled = vScaled
