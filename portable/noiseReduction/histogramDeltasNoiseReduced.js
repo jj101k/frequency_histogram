@@ -122,6 +122,12 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * This produces a small span for a zero-width point, so that it is not
      * infinitely high.
      *
+     * This inspects the whitelist points for the data source, and will actively
+     * clean up any which can no longer be used.
+     *
+     * If accepted values are always `n` apart and the value is `v`, this will
+     * return something close to `v-n, v+n`
+     *
      * @param {ZeroWidthPoint} zeroPoint
      * @returns
      */
