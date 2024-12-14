@@ -43,7 +43,7 @@ class HistogramDeltas extends HistogramDeltasBase {
             nextY = this.afterPoint(this.#lastY, zeroPoint.y)
         } else {
             // This is an estimate!
-            nextY = zeroPoint.y + this.zeroDeltaSpan
+            nextY = zeroPoint.y + this.precision
         }
         const nextLastY = zeroPoint.y
         // Estimate if needed

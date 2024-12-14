@@ -59,7 +59,7 @@ class Histogram {
     #getFrequencies(field = this.fieldInfo.field, noiseReduction = this.#noiseReduction) {
         const dataPoints = this.#parser.getValues(field, this.#limit, this.#filter)
 
-        const expectedMinDeltaY = this.expectedMinDeltaY
+        const expectedPrecision = this.expectedPrecision
 
         const orderedFrequenciesRealByDS = ContinuousHistogram.getOrderedFrequencies(dataPoints)
 
@@ -106,12 +106,12 @@ class Histogram {
             addFrequency(frequency)
             if(!orderedFrequencies[+i+1]) break
             const nextY = orderedFrequencies[+i+1].y
-            if(frequency.y + expectedMinDeltaY < nextY) {
+            if(frequency.y + expectedPrecision < nextY) {
                 // First point: add min delta
-                addFrequency({y: frequency.y + expectedMinDeltaY, f: 0})
+                addFrequency({y: frequency.y + expectedPrecision, f: 0})
                 // Last point: add _n_ * min delta, where y+n*m < ny
-                const pointsToOverlap = Math.floor((nextY - frequency.y) / expectedMinDeltaY - 0.0001)
-                addFrequency({y: frequency.y + pointsToOverlap * expectedMinDeltaY, f: 0})
+                const pointsToOverlap = Math.floor((nextY - frequency.y) / expectedPrecision - 0.0001)
+                addFrequency({y: frequency.y + pointsToOverlap * expectedPrecision, f: 0})
             }
         }
 
@@ -135,10 +135,10 @@ class Histogram {
     }
 
     /**
-     *
+     * The expected gap between two adjacent values
      */
-    get expectedMinDeltaY() {
-        return this.#continuous.expectedMinDeltaY
+    get expectedPrecision() {
+        return this.#continuous.expectedPrecision
     }
 
     /**

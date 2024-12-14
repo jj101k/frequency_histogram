@@ -83,8 +83,9 @@ class HistogramDeltasBase {
 
     /**
      * @protected
+     * @readonly
      */
-    zeroDeltaSpan
+    precision
 
     /**
      * @protected
@@ -246,7 +247,7 @@ class HistogramDeltasBase {
      */
     constructor(deltaInfo, numberOptions) {
         this.#spanPoints = deltaInfo.deltas
-        this.zeroDeltaSpan = deltaInfo.zeroDeltaSpan
+        this.precision = deltaInfo.precision
         this.#zeroWidthPoints = deltaInfo.zeroWidthPoints
         this.getNextZeroPoint()
         this.#getNextSpanPoint()

@@ -40,9 +40,9 @@ class ContinuousHistogram {
     #deltaInfo
 
     /**
-     *
+     * @see expectedPrecision
      */
-    #expectedMinResolution
+    #expectedPrecisionCache
 
     /**
      * @type {{field: valueConfiguration, expectedMinResolution?: number | undefined}}
@@ -69,17 +69,35 @@ class ContinuousHistogram {
         // Special case: exactly one point
         if(this.#length == 1) {
             const [dataPoint0] = dataPoints
-            return {deltas: [], zeroDeltaSpan: this.#expectedMinResolution ?? 1,
+            return {deltas: [], precision: this.#expectedPrecisionCache ?? 1,
                 zeroWidthPoints: [{y: dataPoint0.y, zeroSpan: 1, dataSource: dataPoint0.dataSource}]}
         }
 
         // This will be a fraction, so we'll try to get a good decimal
         // representation for sanity's sake.
+
+        /**
+         * The distance past one value where it would be rounded to the next (raw)
+         */
+        const halfPrecisionRaw = this.expectedPrecision / 2
+        /**
+         * The maximum length of value we'll tolerate.
+         */
         const decimalDigits = 10
-        const nominalZeroDeltaSpan = this.expectedMinDeltaY / 2
-        const headDigits = Math.floor(Math.log10(nominalZeroDeltaSpan))
-        const roundTo = Math.pow(10, decimalDigits - headDigits)
-        const zeroDeltaSpan = Math.round(nominalZeroDeltaSpan * roundTo) / roundTo
+        /**
+         * Eg. if halfPrecisionRaw is 0.25, this will be -1; or if it's 25,
+         * it'll be 1. This just answers where the leading digit of the value is.
+         */
+        const headDigits = Math.floor(Math.log10(halfPrecisionRaw))
+        /**
+         * The inverse of the intended rounding accuracy (to avoid division)
+         */
+        const invRoundTo = Math.pow(10, decimalDigits - headDigits)
+        /**
+         * The distance past one value where it would be rounded to the next.
+         * This should have no more than `decimalDigits` digits.
+         */
+        const halfPrecision = Math.round(halfPrecisionRaw * invRoundTo) / invRoundTo
 
         // Presume sorted in x
 
@@ -114,7 +132,7 @@ class ContinuousHistogram {
                 continue
             }
             const dX = dataPoint.x - last.x
-            if(Math.abs(dataPoint.y - last.y) < zeroDeltaSpan) {
+            if(Math.abs(dataPoint.y - last.y) < halfPrecision) {
                 // Zero point
 
                 if(dataPoint.y === last.y) {
@@ -168,7 +186,7 @@ class ContinuousHistogram {
         deltas.sort((a, b) => a.y - b.y)
         zeroWidthPoints.sort((a, b) => a.y - b.y)
 
-        return {deltas, zeroDeltaSpan, zeroWidthPoints}
+        return {deltas, precision: halfPrecision * 2, zeroWidthPoints}
     }
 
     /**
@@ -214,11 +232,11 @@ class ContinuousHistogram {
     }
 
     /**
-     *
+     * How much difference there is between adjacent values
      */
-    get expectedMinDeltaY() {
-        let expectedMinDeltaY = this.#expectedMinResolution
-        if(expectedMinDeltaY === undefined) {
+    get expectedPrecision() {
+        let expectedPrecision = this.#expectedPrecisionCache
+        if(expectedPrecision === undefined) {
             const dataPoints = this.rawValues
             /**
              * @type {Set<number>}
@@ -241,14 +259,14 @@ class ContinuousHistogram {
                     lastYValue = yValue
                 }
 
-                expectedMinDeltaY = realMinDeltaY
+                expectedPrecision = realMinDeltaY
             } else {
                 console.warn("Not enough distinct values for a delta calculation, will use 1")
-                expectedMinDeltaY = 1
+                expectedPrecision = 1
             }
         }
 
-        return expectedMinDeltaY
+        return expectedPrecision
     }
 
     /**
@@ -277,12 +295,13 @@ class ContinuousHistogram {
      * @param {number} length
      * @param {{maximum?: number, minimum?: number}} [bounds] Used to ensure that
      * out-of-range points aren't emitted
-     * @param {number} [expectedMinResolution]
+     * @param {number} [expectedPrecision] How much difference is expected
+     * between adjacent values, if known.
      */
-    constructor(values, length, bounds, expectedMinResolution) {
+    constructor(values, length, bounds, expectedPrecision) {
         this.#values = values
         this.#length = length
         this.bounds = bounds
-        this.#expectedMinResolution = expectedMinResolution
+        this.#expectedPrecisionCache = expectedPrecision
     }
 }
