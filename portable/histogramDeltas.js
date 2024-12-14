@@ -19,6 +19,40 @@ class HistogramDeltas extends HistogramDeltasBase {
         if (!zeroPoint) {
             throw new Error("Internal error")
         }
+        const nextLastY = zeroPoint.y
+
+        const {lastY, nextY} = this.#getZeroPointEdges(zeroPoint)
+
+        const [lowZeroPoint, highZeroPoint] = [
+            { y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY) },
+            { y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY) },
+        ]
+        // Now we have the answer we can push the "before" value
+        this.addDeltas(lowZeroPoint)
+        // Then the equal value, if applicable.
+        if (this.nextSpanPoint && this.nextSpanPoint.y == zeroPoint.y) {
+            this.addNextSpanPoint()
+        }
+        // Then the "after" value.
+        this.addDeltas(highZeroPoint)
+        this.getNextZeroPoint()
+        this.#lastY = nextLastY
+    }
+
+    /**
+     * This produces a small span for a zero-width point, so that it is not
+     * infinitely high.
+     *
+     * This inspects the whitelist points for the data source, and will actively
+     * clean up any which can no longer be used.
+     *
+     * If accepted values are always `n` apart and the value is `v`, this will
+     * return something close to `v-n, v+n`
+     *
+     * @param {ZeroWidthPoint} zeroPoint
+     * @returns
+     */
+    #getZeroPointEdges(zeroPoint) {
         /**
          * @type {number}
          */
@@ -45,23 +79,9 @@ class HistogramDeltas extends HistogramDeltasBase {
             // This is an estimate!
             nextY = zeroPoint.y + this.precision
         }
-        const nextLastY = zeroPoint.y
         // Estimate if needed
         const lastY = this.#lastY ?? this.beforePoint(zeroPoint.y, nextY)
-        const [lowZeroPoint, highZeroPoint] = [
-            { y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY) },
-            { y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY) },
-        ]
-        // Now we have the answer we can push the "before" value
-        this.addDeltas(lowZeroPoint)
-        // Then the equal value, if applicable.
-        if (this.nextSpanPoint && this.nextSpanPoint.y == zeroPoint.y) {
-            this.addNextSpanPoint()
-        }
-        // Then the "after" value.
-        this.addDeltas(highZeroPoint)
-        this.getNextZeroPoint()
-        this.#lastY = nextLastY
+        return {lastY, nextY}
     }
 
     buildCombined() {
