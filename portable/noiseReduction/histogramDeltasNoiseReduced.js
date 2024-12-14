@@ -72,7 +72,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                     }
                 }
             }
-            if(acceptedValues.size < 2) {
+            if(acceptedValues.size <= 1) {
+                // If all possible further values were rejected, something went wrong.
                 console.warn(orderedFrequenciesReal, acceptedValues)
                 throw new Error(`Internal error: noise reduction produced ${acceptedValues.size} values from ${orderedFrequenciesReal.length}`)
             }
