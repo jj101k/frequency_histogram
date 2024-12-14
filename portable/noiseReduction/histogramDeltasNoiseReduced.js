@@ -93,7 +93,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      */
     #zeroBoundPoints
     /**
-     * @type {{y: number, dF: number}[]}
+     * @type {DeltaDatum[]}
      */
     #zeroDeltas = []
 
@@ -122,7 +122,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * This produces a small span for a zero-width point, so that it is not
      * infinitely high.
      *
-     * @param {{y: number, zeroSpan: number, dataSource: number}} zeroPoint
+     * @param {ZeroWidthPoint} zeroPoint
      * @returns
      */
     #getZeroPointEdges(zeroPoint) {

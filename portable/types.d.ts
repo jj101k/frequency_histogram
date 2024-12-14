@@ -1,20 +1,74 @@
 /**
  *
  */
+interface ZeroWidthPoint {
+    /**
+     *
+     */
+    readonly dataSource: number
+    /**
+     *
+     */
+    readonly y: number
+    /**
+     *
+     */
+    readonly zeroSpan: number
+}
+
+/**
+ *
+ */
+interface DeltaDatum {
+    /**
+     * The period for which this value was in effect.
+     */
+    dF: number
+    /**
+     * The original value
+     */
+    readonly y: number
+    /**
+     *
+     */
+    readonly zeroSpan?: undefined
+}
+
+/**
+ *
+ */
 interface DeltaInfo {
     /**
      *
      */
-    deltas: {y: number, dF: number, zeroSpan?: undefined}[]
+    deltas: DeltaDatum[]
     /**
      * These are points which have zero width, ie. the value does not change
      * between two adjacent time points. These must be sorted by y value (ascending).
      */
-    zeroWidthPoints: {y: number, zeroSpan: number, dataSource: number}[]
+    zeroWidthPoints: ZeroWidthPoint[]
     /**
      *
      */
     zeroDeltaSpan: number
+}
+
+/**
+ *
+ */
+interface InputDatum {
+    /**
+     *
+     */
+    readonly dataSource: number
+    /**
+     *
+     */
+    readonly x: number
+    /**
+     *
+     */
+    readonly y: number
 }
 
 /**
@@ -38,16 +92,7 @@ interface HistogramDeltasAny {
         /**
          *
          */
-        readonly combinedDeltas: {
-            /**
-             * The original value
-             */
-            readonly y: number
-            /**
-             * The period for which this value was in effect.
-             */
-            readonly dF: number
-        }[]
+        readonly combinedDeltas: Readonly<DeltaDatum>[]
         /**
          * When a value appears twice (or more) in a row on the timeline, it
          * would appear as a zero-width, infinitely high spike on the frequency

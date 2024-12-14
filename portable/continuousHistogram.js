@@ -7,7 +7,7 @@
 class ContinuousHistogram {
     /**
      *
-     * @param {Iterable<{x: number, y: number, dataSource: number}>} dataPoints
+     * @param {Iterable<InputDatum>} dataPoints
      * @returns
      */
     static getOrderedFrequencies(dataPoints) {
@@ -84,11 +84,11 @@ class ContinuousHistogram {
         // Presume sorted in x
 
         /**
-         * @type {{y: number, dF: number, zeroSpan?: undefined}[]}
+         * @type {DeltaDatum[]}
          */
         const deltas = []
         /**
-         * @type {{y: number, zeroSpan: number, dataSource: number}[]}
+         * @type {ZeroWidthPoint[]}
          */
         const zeroWidthPoints = []
 
@@ -272,9 +272,9 @@ class ContinuousHistogram {
 
     /**
      *
-     * @param {Iterable<{x: number, y: number, dataSource: number}>} values The
-     * underlying values, where x increases and y is the value to be considered.
-     * This will assume that x values are always the same distance apart.
+     * @param {Iterable<InputDatum>} values The underlying values, where x
+     * increases and y is the value to be considered. This will assume that x
+     * values are always the same distance apart.
      * @param {number} length
      * @param {{maximum?: number, minimum?: number}} [bounds] Used to ensure that
      * out-of-range points aren't emitted

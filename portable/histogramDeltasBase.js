@@ -6,7 +6,7 @@
  */
 class HistogramDeltasBase {
     /**
-     * @type {{y: number, dF: number}[]}
+     * @type {DeltaDatum[]}
      */
     #combinedDeltas = []
     /**
@@ -72,12 +72,12 @@ class HistogramDeltasBase {
 
     /**
      * @protected
-     * @type {{y: number, dF: number} | null}
+     * @type {DeltaDatum | null}
      */
     nextSpanPoint = null
     /**
      * @protected
-     * @type {{y: number, zeroSpan: number, dataSource: number} | null}
+     * @type {ZeroWidthPoint | null}
      */
     nextZeroPoint = null
 
@@ -103,7 +103,7 @@ class HistogramDeltasBase {
     /**
      * @protected
      *
-     * @param {{y: number, dF: number}[]} values
+     * @param {DeltaDatum[]} values
      */
     addDeltas(...values) {
         if (!values.length) {

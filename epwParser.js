@@ -73,7 +73,7 @@ class EpwParser {
      * @param {EpwNamedField<T | null>} field
      * @param {T | undefined} limit
      * @param {((value: EpwRow) => boolean) | undefined} filter
-     * @returns
+     * @returns {InputDatum[]}
      */
     getValues(field, limit = undefined, filter = undefined) {
         /**
