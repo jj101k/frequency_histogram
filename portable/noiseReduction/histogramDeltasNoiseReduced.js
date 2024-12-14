@@ -2,7 +2,11 @@
 /// <reference path="dataSourceZeroWidthNeighbours.js" />
 
 /**
- * This is similar but uses a whitelist of sensor points instead.
+ * This is similar to HistogramDeltas but uses a whitelist of sensor points instead.
+ *
+ * Instead?
+ *
+ * @see HistogramDeltas
  */
 class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     /**
@@ -32,6 +36,9 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         const acceptedValuesByDS = {}
         for(const [ds, orderedFrequenciesReal] of Object.entries(orderedFrequenciesRealByDS)) {
             if(orderedFrequenciesReal.length <= 2) {
+                // If a source has 0-1 values, there's nothing to examine.
+                // If it has 2 values, there isn't enough to detect a pattern
+                // between them.
                 acceptedValuesByDS[ds] = new Set(orderedFrequenciesReal.map(f => f.y))
                 continue
             }
@@ -109,6 +116,9 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         }
         const { lastY, nextY } = this.#getZeroPointEdges(zeroPoint)
 
+        // Assume that it's oscillating just enough to not be detected (ie, +/-
+        // half the minimum distance). This "flattens" the infinitely high point
+        // into a
         const [lowZeroPoint, highZeroPoint] = [
             { y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY) },
             { y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY) },
