@@ -9,43 +9,59 @@
  */
 class DataSourceZeroWidthNeighbours {
     /**
-     *
-     * @returns
-     */
-    #shiftPoints() {
-        return this.points.shift() ?? null
-    }
-
-    /**
-     * The current point to consider (lower than everything in points)
+     * The current point to consider (lower than everything in points). This
+     * will remain set at all times.
      */
     nextPoint
     /**
-     * The possible neighbour points, in ascending order
+     * The possible neighbour points, in ascending order. This can be empty.
      */
     points
 
     /**
      *
+     */
+    get hasHigherPoints() {
+        return this.points.length > 0
+    }
+
+    /**
+     * @throws
+     * @type {number}
+     */
+    get higherPoint() {
+        const point = this.possibleHigherPoint
+        if(point === undefined) {
+            throw new Error("Internal error: all points have been exhausted")
+        }
+        return point
+    }
+
+    /**
+     * @type {number | undefined}
+     */
+    get possibleHigherPoint() {
+        return this.points[0]
+    }
+
+    /**
+     *
      * @param {Iterable<number>} points These must be in ascending order
+     * @throws
      */
     constructor(points) {
         this.points = [...points]
-        if(this.points.length == 0) {
-            throw new Error("Internal error: at least one point must be provided")
-        }
-        this.nextPoint = this.points[0]
+        this.nextPoint = this.higherPoint
         this.points.shift()
     }
 
     /**
      * Replace nextPoint by shifting points
+     *
+     * @throws
      */
     getNext() {
-        if(this.points.length == 0) {
-            throw new Error("Internal error: all points have been exhausted")
-        }
-        this.nextPoint = this.points[0]
+        this.nextPoint = this.higherPoint
         this.points.shift()
     }
 }

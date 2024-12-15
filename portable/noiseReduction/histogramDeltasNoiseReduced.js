@@ -175,21 +175,18 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         } else {
             // It shouldn't be _after_, so take the next whitelist point and
             // invert it
-            if(zeroPointNeighbours.points.length == 0) {
-                throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
-            }
-            whitelistPointBefore = this.beforePoint(zeroPoint.y, zeroPointNeighbours.points[0])
+            whitelistPointBefore = this.beforePoint(zeroPoint.y, zeroPointNeighbours.higherPoint)
         }
 
         // Suck up until the next point is after.
-        while (zeroPointNeighbours.points.length && zeroPointNeighbours.points[0] <= zeroPoint.y) {
+        while (zeroPointNeighbours.hasHigherPoints && zeroPointNeighbours.higherPoint <= zeroPoint.y) {
             zeroPointNeighbours.getNext()
             if (zeroPointNeighbours.nextPoint < zeroPoint.y) {
                 whitelistPointBefore = zeroPointNeighbours.nextPoint
             }
         }
 
-        return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, zeroPointNeighbours.points[0])
+        return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, zeroPointNeighbours.possibleHigherPoint)
     }
 
     buildCombined() {
