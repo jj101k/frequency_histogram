@@ -237,15 +237,18 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      */
     constructor(deltaInfo, numberOptions, valueWhitelistBySource) {
         super(deltaInfo, numberOptions)
-        this.#zeroPointNeighboursBySource = Object.fromEntries(
-            Object.entries(valueWhitelistBySource).map(([ds, whitelist]) => [ds, new DataSourceZeroWidthNeighbours(whitelist)])
-        )
+        /**
+         * @type {Record<number, DataSourceZeroWidthNeighbours>}
+         */
+        const zeroPointNeighboursBySource = {}
         const allPoints = new Set()
-        for(const whitelist of Object.values(valueWhitelistBySource)) {
+        for(const [ds, whitelist] of Object.entries(valueWhitelistBySource)) {
             for(const p of whitelist) {
                 allPoints.add(p)
             }
+            zeroPointNeighboursBySource[+ds] = new DataSourceZeroWidthNeighbours(whitelist)
         }
+        this.#zeroPointNeighboursBySource = zeroPointNeighboursBySource
         this.#zeroBoundPoints = [...allPoints].sort((a, b) => a - b)
         console.log("Initial points", valueWhitelistBySource)
     }
