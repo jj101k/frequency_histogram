@@ -84,10 +84,6 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
-     * @type {Record<number, DataSourceZeroWidthNeighbours>}
-     */
-    #spwStates
-    /**
      * This is where a zero-width point could fit. This will decrease in size as
      * points are enumerated.
      *
@@ -100,6 +96,12 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * points to be used for that purpose directly.
      */
     #zeroBoundPoints
+
+    /**
+     * @type {Record<number, DataSourceZeroWidthNeighbours>}
+     */
+    #zeroPointNeighboursBySource
+
     /**
      * @type {DeltaDatum[]}
      */
@@ -147,13 +149,13 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         // 1. The last whitelist point _before_ this
         // 2. The whitelist point on this, if applicable - for next time
         // 3. The whitelist point after this.
-        const spwState = this.#spwStates[zeroPoint.dataSource]
+        const zeroPointNeighbours = this.#zeroPointNeighboursBySource[zeroPoint.dataSource]
 
-        if (!spwState || spwState.nextPoint === null) {
+        if (!zeroPointNeighbours || zeroPointNeighbours.nextPoint === null) {
             throw new Error("Internal error")
         }
 
-        if(spwState.nextPoint >= zeroPoint.y && !spwState.points.length) {
+        if(zeroPointNeighbours.nextPoint >= zeroPoint.y && !zeroPointNeighbours.points.length) {
             // If we get here, it's a data source which emitted exactly one
             // point, so we can't autodetect the point whitelist. Instead, we
             // presume that it's at the highest possible resolution, with no
@@ -162,7 +164,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             // it contains any others, nor if they are above or below this one.
             if (this.#zeroBoundPoints[0] == zeroPoint.y) {
                 if(this.#zeroBoundPoints.length == 1) {
-                    console.log(spwState.nextPoint, spwState.points)
+                    console.log(zeroPointNeighbours.nextPoint, zeroPointNeighbours.points)
                     throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
                 }
                 // We have a high point only
@@ -183,23 +185,23 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
          */
         let whitelistPointBefore
 
-        if (spwState.nextPoint < zeroPoint.y) {
-            whitelistPointBefore = spwState.nextPoint
+        if (zeroPointNeighbours.nextPoint < zeroPoint.y) {
+            whitelistPointBefore = zeroPointNeighbours.nextPoint
         } else {
             // It shouldn't be _after_, so take the next whitelist point and
             // invert it
-            whitelistPointBefore = this.beforePoint(zeroPoint.y, spwState.points[0])
+            whitelistPointBefore = this.beforePoint(zeroPoint.y, zeroPointNeighbours.points[0])
         }
 
         // Suck up until the next point is after.
-        while (spwState.points.length && spwState.points[0] <= zeroPoint.y) {
-            spwState.getNext()
-            if (spwState.nextPoint !== null && spwState.nextPoint < zeroPoint.y) {
-                whitelistPointBefore = spwState.nextPoint
+        while (zeroPointNeighbours.points.length && zeroPointNeighbours.points[0] <= zeroPoint.y) {
+            zeroPointNeighbours.getNext()
+            if (zeroPointNeighbours.nextPoint !== null && zeroPointNeighbours.nextPoint < zeroPoint.y) {
+                whitelistPointBefore = zeroPointNeighbours.nextPoint
             }
         }
 
-        return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, spwState.points[0])
+        return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, zeroPointNeighbours.points[0])
     }
 
     buildCombined() {
@@ -231,20 +233,20 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      *
      * @param {DeltaInfo} deltaInfo
      * @param {{maximum?: number, minimum?: number} | undefined} numberOptions
-     * @param {Record<number, Set<number>>} sensorPointWhitelist
+     * @param {Record<number, Set<number>>} valueWhitelistBySource
      */
-    constructor(deltaInfo, numberOptions, sensorPointWhitelist) {
+    constructor(deltaInfo, numberOptions, valueWhitelistBySource) {
         super(deltaInfo, numberOptions)
-        this.#spwStates = Object.fromEntries(
-            Object.entries(sensorPointWhitelist).map(([ds, whitelist]) => [ds, new DataSourceZeroWidthNeighbours(whitelist)])
+        this.#zeroPointNeighboursBySource = Object.fromEntries(
+            Object.entries(valueWhitelistBySource).map(([ds, whitelist]) => [ds, new DataSourceZeroWidthNeighbours(whitelist)])
         )
         const allPoints = new Set()
-        for(const whitelist of Object.values(sensorPointWhitelist)) {
+        for(const whitelist of Object.values(valueWhitelistBySource)) {
             for(const p of whitelist) {
                 allPoints.add(p)
             }
         }
         this.#zeroBoundPoints = [...allPoints].sort((a, b) => a - b)
-        console.log("Initial points", sensorPointWhitelist)
+        console.log("Initial points", valueWhitelistBySource)
     }
 }
