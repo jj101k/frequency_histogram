@@ -31,13 +31,21 @@ class DataSourceZeroWidthNeighbours {
      */
     constructor(points) {
         this.points = [...points]
-        this.nextPoint = this.#shiftPoints()
+        if(this.points.length == 0) {
+            throw new Error("Internal error: at least one point must be provided")
+        }
+        this.nextPoint = this.points[0]
+        this.points.shift()
     }
 
     /**
      * Replace nextPoint by shifting points
      */
     getNext() {
-        this.nextPoint = this.#shiftPoints()
+        if(this.points.length == 0) {
+            throw new Error("Internal error: all points have been exhausted")
+        }
+        this.nextPoint = this.points[0]
+        this.points.shift()
     }
 }

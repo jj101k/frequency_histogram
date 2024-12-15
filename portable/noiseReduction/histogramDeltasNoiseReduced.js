@@ -149,38 +149,20 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         // 1. The last whitelist point _before_ this
         // 2. The whitelist point on this, if applicable - for next time
         // 3. The whitelist point after this.
-        const zeroPointNeighbours = this.#zeroPointNeighboursBySource[zeroPoint.dataSource]
+        let zeroPointNeighbours = this.#zeroPointNeighboursBySource[zeroPoint.dataSource]
 
         if (!zeroPointNeighbours) {
             throw new Error("Internal error: source is not known")
         }
-        if (zeroPointNeighbours.nextPoint === null) {
-            throw new Error("Internal error: all neighbouring values have been excluded")
-        }
 
         if(zeroPointNeighbours.nextPoint >= zeroPoint.y && !zeroPointNeighbours.points.length) {
-            // If we get here, it's a data source which emitted exactly one
-            // point, so we can't autodetect the point whitelist. Instead, we
-            // presume that it's at the highest possible resolution, with no
-            // noise reduction
-            // We know that the point list contains this one. We don't know if
-            // it contains any others, nor if they are above or below this one.
-            if (this.#zeroPointNeighboursAll[0] == zeroPoint.y) {
-                if(this.#zeroPointNeighboursAll.length == 1) {
-                    console.log(zeroPointNeighbours.nextPoint, zeroPointNeighbours.points)
-                    throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
-                }
-                // We have a high point only
-                return this.extrapolateBefore(zeroPoint.y, this.#zeroPointNeighboursAll[1])
-            }
-            // Otherwise, we have a low point at least.
-
-            // Wind forward until it's [before, on, after]
-            while (this.#zeroPointNeighboursAll[1] < zeroPoint.y) {
-                this.#zeroPointNeighboursAll.shift()
-            }
-            const [lastY, , nextY] = this.#zeroPointNeighboursAll
-            return this.extrapolateAfter(lastY, zeroPoint.y, nextY)
+            // If we get here, there's only one point left (after the current
+            // zero point), so we can't pick out neighbours. This should only
+            // happen with data sources which only have one point.
+            //
+            // There may still be points in the general list, and if so we'll
+            // use them.
+            zeroPointNeighbours = this.#zeroPointNeighboursAll
         }
 
         /**
@@ -193,13 +175,16 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         } else {
             // It shouldn't be _after_, so take the next whitelist point and
             // invert it
+            if(zeroPointNeighbours.points.length == 0) {
+                throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
+            }
             whitelistPointBefore = this.beforePoint(zeroPoint.y, zeroPointNeighbours.points[0])
         }
 
         // Suck up until the next point is after.
         while (zeroPointNeighbours.points.length && zeroPointNeighbours.points[0] <= zeroPoint.y) {
             zeroPointNeighbours.getNext()
-            if (zeroPointNeighbours.nextPoint !== null && zeroPointNeighbours.nextPoint < zeroPoint.y) {
+            if (zeroPointNeighbours.nextPoint < zeroPoint.y) {
                 whitelistPointBefore = zeroPointNeighbours.nextPoint
             }
         }
@@ -252,7 +237,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             zeroPointNeighboursBySource[+ds] = new DataSourceZeroWidthNeighbours(whitelist)
         }
         this.#zeroPointNeighboursBySource = zeroPointNeighboursBySource
-        this.#zeroPointNeighboursAll = [...allPoints].sort((a, b) => a - b)
+        this.#zeroPointNeighboursAll = new DataSourceZeroWidthNeighbours([...allPoints].sort((a, b) => a - b))
         console.log("Initial points", valueWhitelistBySource)
     }
 }
