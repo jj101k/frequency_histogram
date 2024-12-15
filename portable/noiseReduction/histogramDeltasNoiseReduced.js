@@ -84,8 +84,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
-     * This is where a zero-width point could fit. This will decrease in size as
-     * points are enumerated.
+     * This is where a zero-width point could fit across all data sources. This
+     * will decrease in size as points are enumerated.
      *
      * Initially, this is the set of all known points; once a point is certain
      * not to be useful in placing another zero-width point, it gets dropped.
@@ -95,7 +95,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * NOTE: this is only used if the data source doesn't have enough unique
      * points to be used for that purpose directly.
      */
-    #zeroBoundPoints
+    #zeroPointNeighboursAll
 
     /**
      * @type {Record<number, DataSourceZeroWidthNeighbours>}
@@ -165,21 +165,21 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             // noise reduction
             // We know that the point list contains this one. We don't know if
             // it contains any others, nor if they are above or below this one.
-            if (this.#zeroBoundPoints[0] == zeroPoint.y) {
-                if(this.#zeroBoundPoints.length == 1) {
+            if (this.#zeroPointNeighboursAll[0] == zeroPoint.y) {
+                if(this.#zeroPointNeighboursAll.length == 1) {
                     console.log(zeroPointNeighbours.nextPoint, zeroPointNeighbours.points)
                     throw new Error(`Internal error: unable to find a whitelist point before or after ${zeroPoint.y}`)
                 }
                 // We have a high point only
-                return this.extrapolateBefore(zeroPoint.y, this.#zeroBoundPoints[1])
+                return this.extrapolateBefore(zeroPoint.y, this.#zeroPointNeighboursAll[1])
             }
             // Otherwise, we have a low point at least.
 
             // Wind forward until it's [before, on, after]
-            while (this.#zeroBoundPoints[1] < zeroPoint.y) {
-                this.#zeroBoundPoints.shift()
+            while (this.#zeroPointNeighboursAll[1] < zeroPoint.y) {
+                this.#zeroPointNeighboursAll.shift()
             }
-            const [lastY, , nextY] = this.#zeroBoundPoints
+            const [lastY, , nextY] = this.#zeroPointNeighboursAll
             return this.extrapolateAfter(lastY, zeroPoint.y, nextY)
         }
 
@@ -252,7 +252,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             zeroPointNeighboursBySource[+ds] = new DataSourceZeroWidthNeighbours(whitelist)
         }
         this.#zeroPointNeighboursBySource = zeroPointNeighboursBySource
-        this.#zeroBoundPoints = [...allPoints].sort((a, b) => a - b)
+        this.#zeroPointNeighboursAll = [...allPoints].sort((a, b) => a - b)
         console.log("Initial points", valueWhitelistBySource)
     }
 }
