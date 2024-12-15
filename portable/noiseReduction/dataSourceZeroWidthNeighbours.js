@@ -9,6 +9,14 @@
  */
 class DataSourceZeroWidthNeighbours {
     /**
+     * @readonly
+     */
+    debugMin
+    /**
+     * @readonly
+     */
+    debugMax
+    /**
      * The current point to consider (lower than everything in points). This
      * will remain set at all times.
      */
@@ -53,6 +61,35 @@ class DataSourceZeroWidthNeighbours {
         this.points = [...points]
         this.nextPoint = this.higherPoint
         this.points.shift()
+        this.debugMin = this.nextPoint
+        this.debugMax = this.points[this.points.length - 1]
+    }
+
+    /**
+     * Finds the last point before the given value, if possible. This will drop
+     * points which are passed along the way.
+     *
+     * The returned point is guaranteed to be in nextPoint also, meaning that
+     * the state after calling is either unchanged (null) or is still with
+     * nextPoint lower than v.
+     *
+     * @param {number} v
+     * @returns Null if there are no matching points, or a number otherwise.
+     */
+    getLastPointBefore(v) {
+        let whitelistPointBefore = this.nextPoint
+        if (whitelistPointBefore >= v) {
+            return null
+        }
+
+        // Suck up until the next point is after.
+        while (this.hasHigherPoints && this.higherPoint <= v) {
+            if (this.higherPoint < v) {
+                whitelistPointBefore = this.higherPoint
+            }
+            this.getNext() // Shift it back, so nextPoint is <= zeroPoint.y
+        }
+        return whitelistPointBefore
     }
 
     /**

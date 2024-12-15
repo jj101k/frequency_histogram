@@ -166,26 +166,28 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         }
 
         /**
-         * @type {number}
+         * A point which is before the current point and (where possible) is in
+         * the whitelist.
          */
-        let whitelistPointBefore
+        let whitelistPointBefore = zeroPointNeighbours.getLastPointBefore(zeroPoint.y)
+        if(whitelistPointBefore === null) {
+            if(zeroPointNeighbours.nextPoint > zeroPoint.y) {
+                throw new Error(`Internal error: no points were found before ${zeroPoint.y} [${zeroPointNeighbours.debugMin}..${zeroPointNeighbours.debugMax}]`)
+            }
+            // This can legitimately happen if a zero point is also the lowest
+            // point in the accepted set. Where that's true, we make one up
+            // that's earlier.
 
-        if (zeroPointNeighbours.nextPoint < zeroPoint.y) {
-            whitelistPointBefore = zeroPointNeighbours.nextPoint
-        } else {
-            // It shouldn't be _after_, so take the next whitelist point and
-            // invert it
+            /**
+             * @todo improve this to assume that the lower bound is genuinely
+             * the lower bound.
+             */
             whitelistPointBefore = this.beforePoint(zeroPoint.y, zeroPointNeighbours.higherPoint)
         }
 
-        // Suck up until the next point is after.
-        while (zeroPointNeighbours.hasHigherPoints && zeroPointNeighbours.higherPoint <= zeroPoint.y) {
-            zeroPointNeighbours.getNext()
-            if (zeroPointNeighbours.nextPoint < zeroPoint.y) {
-                whitelistPointBefore = zeroPointNeighbours.nextPoint
-            }
-        }
-
+        /**
+         * @todo improve this to properly respect the upper bound
+         */
         return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, zeroPointNeighbours.possibleHigherPoint)
     }
 
