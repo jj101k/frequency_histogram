@@ -151,8 +151,11 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         // 3. The whitelist point after this.
         const zeroPointNeighbours = this.#zeroPointNeighboursBySource[zeroPoint.dataSource]
 
-        if (!zeroPointNeighbours || zeroPointNeighbours.nextPoint === null) {
-            throw new Error("Internal error")
+        if (!zeroPointNeighbours) {
+            throw new Error("Internal error: source is not known")
+        }
+        if (zeroPointNeighbours.nextPoint === null) {
+            throw new Error("Internal error: all neighbouring values have been excluded")
         }
 
         if(zeroPointNeighbours.nextPoint >= zeroPoint.y && !zeroPointNeighbours.points.length) {
