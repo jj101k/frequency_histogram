@@ -107,3 +107,27 @@ interface HistogramDeltasAny {
      */
     readonly combined: Readonly<DeltaDatum>[]
 }
+
+/**
+ *
+ */
+interface ValueFrequency {
+    /**
+     *
+     */
+    f: number
+    /**
+     *
+     */
+    y: number
+}
+
+/**
+ *
+ */
+interface ValueFrequencyScaled extends ValueFrequency {
+    /**
+     *
+     */
+    fScaled: number
+}

@@ -1,5 +1,6 @@
 /// <reference path="../histogramDeltasBase.js" />
 /// <reference path="dataSourceZeroWidthNeighbours.js" />
+/// <reference path="../types.d.ts" />
 
 /**
  * This is similar to HistogramDeltas but uses a whitelist of sensor points instead.
@@ -10,10 +11,33 @@
  */
 class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     /**
+     * Returns true if the supplied scaled value appears to be noise.
+     *
+     * @param {ValueFrequencyScaled} v
+     * @param {ValueFrequencyScaled} previous
+     * @param {ValueFrequencyScaled[]} remaining
+     * @returns
+     */
+    static #looksLikeNoise(v, previous, remaining) {
+        // It's < 20% as common as the previous value
+        if (v.fScaled * 5 >= previous.fScaled) {
+            return false
+        }
+        // And < 20% as common as the next 10 values (on average)
+        const n10mean = remaining.slice(0, 10).reduce(
+            (p, c) => ({t: p.t + c.fScaled, c: p.c + 1}), {t: 0, c: 0})
+        if(n10mean.c && 5 * v.fScaled >= n10mean.t / n10mean.c) {
+            // Note: if it's the last value, it's just accepted.
+            return false
+        }
+        return true
+    }
+
+    /**
      * This is part of the noise reduction system. Values which look like they
      * are not noise are grouped and returned.
      *
-     * @param {Record<number, {y: number, f: number}[]>} orderedFrequenciesRealByDS
+     * @param {Record<number, ValueFrequency[]>} orderedFrequenciesRealByDS
      * These must be in ascending numeric order
      * @param {valueConfiguration} valueConfig
      * @returns
@@ -27,8 +51,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
          * use in future.
          */
         const scaler = valueConfig.expectsExponentialFrequency ?
-            new InverseLogValueScaler() :
-            new InverseValueScaler()
+            new LogValueScaler() :
+            new LinearValueScaler()
         /**
          * @type {{[dataSource: number]: Set<number>}} Which values look valid
          * on each data source
@@ -42,35 +66,41 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                 acceptedValuesByDS[ds] = new Set(orderedFrequenciesReal.map(f => f.y))
                 continue
             }
+
             /**
-             * @type {Set<number>}
+             * @type {ValueFrequencyScaled[]}
              */
-            const acceptedValues = new Set()
+            const orderedFrequenciesMapped = orderedFrequenciesReal.map(
+                v => ({...v, fScaled: scaler.scale(v.f)})
+            )
+
             /**
              * The first value seen is presumed to be non-noise.
              *
              * @todo Adjust this to use a better starting point from early in
              * the set.
              */
-            const start = orderedFrequenciesReal[0]
-            acceptedValues.add(start.y)
-            const startScaled = scaler.scale(start.f)
-            let lastScaled = 0
+            const start = orderedFrequenciesMapped[0]
+            orderedFrequenciesMapped.shift()
 
-            for (const [i, v] of orderedFrequenciesReal.slice(1).entries()) {
-                const vScaled = scaler.scale(v.f) - startScaled
-                // f0: It's not more than 5x the previous accepted value
-                if (vScaled < lastScaled * 5) {
-                    lastScaled = vScaled
-                    acceptedValues.add(v.y)
-                } else {
-                    // f1: There are at least 5 values above it
-                    const offset = i + 1
-                    if(offset + 5 < orderedFrequenciesReal.length) {
-                        lastScaled = vScaled
-                        acceptedValues.add(v.y)
-                    }
+            /**
+             * @type {Set<number>}
+             */
+            const acceptedValues = new Set([start.y])
+            let previous = start
+
+            /**
+             * @type {ValueFrequencyScaled | undefined}
+             */
+            let v
+
+            while((v = orderedFrequenciesMapped.shift())) {
+                if(this.#looksLikeNoise(v, previous, orderedFrequenciesMapped)) {
+                    console.log(`Dropping value ${v.y} (${v.f}x; from ${previous.y} (${previous.f}x), with [${orderedFrequenciesMapped.length} entries] above)`)
+                    continue
                 }
+                previous = v
+                acceptedValues.add(v.y)
             }
             if(acceptedValues.size <= 1) {
                 // If all possible further values were rejected, something went wrong.

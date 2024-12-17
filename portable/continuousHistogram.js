@@ -28,6 +28,9 @@ class ContinuousHistogram {
             }
             frequencies[dataPoint.y]++
         }
+        /**
+         * @type {Record<number, ValueFrequency[]>}
+         */
         const orderedFrequenciesReal = Object.fromEntries(
             Object.entries(frequenciesByDS).map(([i, frequencies]) => [i,
                 Object.entries(frequencies).map(([y, f]) => ({ y: +y, f })).sort((a, b) => a.y - b.y)])
