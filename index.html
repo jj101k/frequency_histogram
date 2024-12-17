@@ -72,6 +72,27 @@
             display: block;
             float: left;
         }
+
+
+        @media(prefers-color-scheme: dark) {
+            body {
+                background: #333;
+                color: white;
+            }
+
+            fieldset[data-readwrite] [data-pseudo-option] {
+                border-color: #888;
+            }
+
+            fieldset[data-readwrite] [data-pseudo-option][data-selected] {
+                background: #aaa;
+                color: black;
+            }
+
+            label.quick-click {
+                border-color: #aaa;
+            }
+        }
     </style>
 </head>
 
