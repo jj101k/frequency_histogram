@@ -122,6 +122,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * @returns
      */
     static regroupNoiseValues(orderedFrequenciesRealByDS, acceptedValuesByDS) {
+        let regrouped = 0
         /**
          * @type {typeof orderedFrequenciesRealByDS}
          */
@@ -164,8 +165,10 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                         for(const v of missedData) {
                             if(v.f < closeToLast) {
                                 lastValue.f += v.f
+                                regrouped++
                             } else if(v.f > closeToNext) {
                                 nextValue.f += v.f
+                                regrouped++
                             } else {
                                 console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
                             }
@@ -177,6 +180,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                         for(const v of missedData) {
                             if(v.f > closeToNext) {
                                 nextValue.f += v.f
+                                regrouped++
                             } else {
                                 console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
                             }
@@ -194,6 +198,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                     const closeToLast = lastValue.y + proximityThreshold
                     for(const v of missedData) {
                         if(v.f < closeToLast) {
+                            regrouped++
                             lastValue.f += v.f
                         } else {
                             console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
@@ -206,6 +211,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
 
             regroupedValuesByDS[source] = acceptedData
         }
+        console.log(`${regrouped} noise values regrouped`)
         return regroupedValuesByDS
     }
 
