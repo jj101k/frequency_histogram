@@ -246,9 +246,9 @@ class HistogramDeltasBase {
      * @param {{maximum?: number, minimum?: number} | undefined} numberOptions
      */
     constructor(deltaInfo, numberOptions) {
-        this.#spanPoints = deltaInfo.deltas
+        this.#spanPoints = [...deltaInfo.deltas]
         this.precision = deltaInfo.precision
-        this.#zeroWidthPoints = deltaInfo.zeroWidthPoints
+        this.#zeroWidthPoints = [...deltaInfo.zeroWidthPoints]
         this.getNextZeroPoint()
         this.#getNextSpanPoint()
         this.#maximum = numberOptions?.maximum
