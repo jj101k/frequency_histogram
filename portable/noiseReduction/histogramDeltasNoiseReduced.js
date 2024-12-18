@@ -114,6 +114,102 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
+     * This reattaches noise values where they should have been originally,
+     * where possible.
+     *
+     * @param {Record<number, ValueFrequency[]>} orderedFrequenciesRealByDS
+     * @param {Record<string, Set<number>>} acceptedValuesByDS
+     * @returns
+     */
+    static regroupNoiseValues(orderedFrequenciesRealByDS, acceptedValuesByDS) {
+        /**
+         * @type {typeof orderedFrequenciesRealByDS}
+         */
+        const regroupedValuesByDS = {}
+        for(const [source, values] of Object.entries(orderedFrequenciesRealByDS)) {
+            /**
+             * @type {ValueFrequency | undefined}
+             */
+            let lastValue
+            const acceptedValues = [...acceptedValuesByDS[source]]
+            if(acceptedValues.length == 0) {
+                console.warn(`No accepted values - all ${values.length} dropped`)
+                continue
+            }
+            // Take the proximity threshold as the average gap between values,
+            // which is just (n[max]-n[min])/(sum[n]-1)
+            const proximityThreshold = (acceptedValues[acceptedValues.length - 1] - acceptedValues[0]) / (acceptedValues.length - 1)
+            /**
+             * @type {ValueFrequency[]}
+             */
+            let missedData = []
+            /**
+             * @type {ValueFrequency[]}
+             */
+            const acceptedData = []
+            for(const value of values) {
+                // Skip past accepted points lower than this one
+                while(acceptedValues.length > 0 && acceptedValues[0] < value.y) {
+                    acceptedValues.shift()
+                }
+                // Note: from above, we know that acceptedValues[0] >= value.y
+                if(acceptedValues[0] === undefined || acceptedValues[0] > value.y) {
+                    missedData.push(value)
+                } else {
+                    const nextValue = {...value}
+                    if(lastValue) {
+                        const midPoint = (lastValue.y + nextValue.y) / 2
+                        const closeToLast = Math.min(midPoint, lastValue.y + proximityThreshold)
+                        const closeToNext = Math.max(nextValue.y - proximityThreshold, midPoint)
+                        for(const v of missedData) {
+                            if(v.f < closeToLast) {
+                                lastValue.f += v.f
+                            } else if(v.f > closeToNext) {
+                                nextValue.f += v.f
+                            } else {
+                                console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
+                            }
+                        }
+                    } else if(missedData.length > 0) {
+                        // First time: it's probably accepted, but otherwise
+                        // just push it.
+                        const closeToNext = nextValue.y - proximityThreshold
+                        for(const v of missedData) {
+                            if(v.f > closeToNext) {
+                                nextValue.f += v.f
+                            } else {
+                                console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
+                            }
+                        }
+                    }
+                    acceptedData.push(nextValue) // It may change after this
+                    missedData = []
+                    lastValue = nextValue
+                }
+            }
+
+            // Not likely, but there may be some missed data at the end.
+            if(missedData.length > 0) {
+                if(lastValue) {
+                    const closeToLast = lastValue.y + proximityThreshold
+                    for(const v of missedData) {
+                        if(v.f < closeToLast) {
+                            lastValue.f += v.f
+                        } else {
+                            console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
+                        }
+                    }
+                } else {
+                    console.warn(`Dropping all ${missedData.length} values`)
+                }
+            }
+
+            regroupedValuesByDS[source] = acceptedData
+        }
+        return regroupedValuesByDS
+    }
+
+    /**
      * This is where a zero-width point could fit across all data sources. This
      * will decrease in size as points are enumerated.
      *

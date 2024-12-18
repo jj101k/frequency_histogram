@@ -70,7 +70,7 @@ class Histogram {
         if(noiseReduction) {
             const acceptedValues = HistogramDeltasNoiseReduced.getAcceptedValues(orderedFrequenciesRealByDS, this.fieldInfo.field)
 
-            orderedFrequenciesByDS = Object.fromEntries(Object.entries(orderedFrequenciesRealByDS).map(([ds, frequencies]) => [ds, frequencies.filter(v => acceptedValues[ds]?.has(v.y))]))
+            orderedFrequenciesByDS = HistogramDeltasNoiseReduced.regroupNoiseValues(orderedFrequenciesRealByDS, acceptedValues)
         } else {
             orderedFrequenciesByDS = orderedFrequenciesRealByDS
         }
