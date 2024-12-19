@@ -3,9 +3,8 @@
 /// <reference path="../types.d.ts" />
 
 /**
- * This is similar to HistogramDeltas but uses a whitelist of sensor points instead.
- *
- * Instead?
+ * This is similar to HistogramDeltas but uses a whitelist of sensor points to
+ * more accurately detect zero-delta edges.
  *
  * @see HistogramDeltas
  */
@@ -114,6 +113,107 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
+     *
+     * @param {Record<string, Set<number>>} acceptedValuesByDS
+     * @returns
+     */
+    static aggregateAcceptedValues(acceptedValuesByDS) {
+        /**
+         * @type {Record<number, number>}
+         */
+        const seenValues = {}
+        for(const [source, values] of Object.entries(acceptedValuesByDS)) {
+            for(const value of values) {
+                if(!seenValues[value]) {
+                    seenValues[value] = 0
+                }
+                seenValues[value]++
+            }
+        }
+        // Find the sources which have the most points in common
+        const sourceScores = Object.entries(acceptedValuesByDS).map(
+            ([source, values]) => ({source, score: [...values].reduce((c, v) => c + seenValues[v], 0)}))
+        sourceScores.sort((a, b) => b.score - a.score) // Highest score first
+        // From here, we detect the median distance between two points on the
+        // most common source.
+        const topSource = [...acceptedValuesByDS[sourceScores[0].source]].sort((a, b) => a - b)
+        let lastPoint = topSource[0]
+        const diffs = topSource.slice(1).map(v => {const result = v - lastPoint; lastPoint = v; return result})
+        diffs.sort((a, b) => a - b)
+        /**
+         * @type {number}
+         */
+        let distance
+        const midPoint = (diffs.length - 1) / 2
+        if(midPoint % 1 == 0) {
+            // If it's an odd number, we take the one in the middle.
+            distance = diffs[midPoint]
+        } else {
+            // If it's even, we average the two in the middle
+            distance = (diffs[Math.floor(midPoint)] + diffs[Math.floor(midPoint) + 1]) / 2
+        }
+        // FIXME sanity check - verify how many are within that distance.
+        // Start at the most popular point, and then go down in popularity,
+        // eliminating points within `distance` of any existing point
+        const points = Object.entries(seenValues).sort(([va, pa], [vb, pb]) => pb - pa).map(([v]) => +v)
+        const mostPopularPoint = points[0]
+        const acceptedPoints = [mostPopularPoint]
+        for(const point of points.slice(1)) {
+            // Lots of work needed here FIXME
+            const position = this.#binarySearchPoint(acceptedPoints, (a, b) => a - b, point)
+            if(position == -1) {
+                if(acceptedPoints[0] - point >= distance) {
+                    acceptedPoints.splice(position + 1, 0, point)
+                }
+            } else if(position == acceptedPoints.length - 1) {
+                if(point - acceptedPoints[acceptedPoints.length - 1] >= distance) {
+                    acceptedPoints.push(point)
+                }
+            } else {
+                // Mid-point. The one at `position` is before, and `position+1`
+                // is after.
+                const before = acceptedPoints[position]
+                const after = acceptedPoints[position + 1]
+                if(after - point >= distance && point - before >= distance) {
+                    acceptedPoints.splice(position + 1, 0, point)
+                }
+            }
+        }
+        console.log(distance, acceptedPoints)
+        return acceptedPoints
+    }
+
+    /**
+     *
+     * @template T
+     * @param {T[]} list
+     * @param {(a: T, b: T) => number} sort
+     * @param {T} value
+     * @returns {number} The position after which this value could fit.
+     */
+    static #binarySearchPoint(list, sort, value) {
+        let lowerBound = -1
+        let upperBound = list.length - 1
+        // Validate the bounds
+        if(sort(value, list[upperBound]) > 0) {
+            return upperBound
+        }
+        while(upperBound > lowerBound + 1) {
+            const checkPoint = Math.round((lowerBound + upperBound) / 2)
+            const compare = list[checkPoint]
+            const result = sort(value, compare) // Based on normal a-b, -1 means that value is lower
+            if(result > 0) {
+                // value is higher
+                lowerBound = checkPoint
+            } else {
+                // it's lower (or perhaps equal)
+                upperBound = checkPoint
+            }
+        }
+        return lowerBound
+    }
+
+    /**
      * This reattaches noise values where they should have been originally,
      * where possible.
      *
@@ -122,6 +222,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * @returns
      */
     static regroupNoiseValues(orderedFrequenciesRealByDS, acceptedValuesByDS) {
+        const x = this.aggregateAcceptedValues(acceptedValuesByDS)
         let regrouped = 0
         /**
          * @type {typeof orderedFrequenciesRealByDS}
@@ -132,12 +233,14 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
              * @type {ValueFrequency | undefined}
              */
             let lastValue
-            const acceptedValues = [...acceptedValuesByDS[source]]
+            // const acceptedValues = [...acceptedValuesByDS[source]]
+            const acceptedValues = [...x]
             if(acceptedValues.length == 0) {
                 console.warn(`No accepted values - all ${values.length} dropped`)
                 continue
             }
-            // Take the proximity threshold as the average gap between values,
+            console.log(acceptedValues)
+            // Take the proximity threshold as the mean gap between values,
             // which is just (n[max]-n[min])/(sum[n]-1)
             const proximityThreshold = (acceptedValues[acceptedValues.length - 1] - acceptedValues[0]) / (acceptedValues.length - 1)
             /**
@@ -162,6 +265,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                         const midPoint = (lastValue.y + nextValue.y) / 2
                         const closeToLast = Math.min(midPoint, lastValue.y + proximityThreshold)
                         const closeToNext = Math.max(nextValue.y - proximityThreshold, midPoint)
+                        let droppedValues = 0
                         for(const v of missedData) {
                             if(v.f < closeToLast) {
                                 lastValue.f += v.f
@@ -170,20 +274,39 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                                 nextValue.f += v.f
                                 regrouped++
                             } else {
-                                console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
+                                droppedValues += v.f
+                                regrouped++
+                                console.warn(`Moving noise value ${v.y} (${v.f}x) to [${lastValue.y}] ${midPoint} [${nextValue.y}]`)
                             }
+                        }
+                        if(droppedValues != 0) {
+                            missedData = []
+                            const midValue = {y: midPoint, f: droppedValues}
+                            acceptedData.push(nextValue, midValue) // It may change after this
+                            lastValue = midValue
+                            continue
                         }
                     } else if(missedData.length > 0) {
                         // First time: it's probably accepted, but otherwise
                         // just push it.
                         const closeToNext = nextValue.y - proximityThreshold
+                        let droppedValues = 0
                         for(const v of missedData) {
                             if(v.f > closeToNext) {
                                 nextValue.f += v.f
                                 regrouped++
                             } else {
-                                console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
+                                droppedValues += v.f
+                                regrouped++
+                                console.warn(`Moving noise value ${v.y} (${v.f}x) up to ${closeToNext} [${nextValue.y}]`)
                             }
+                        }
+                        if(droppedValues != 0) {
+                            missedData = []
+                            const midValue = {y: closeToNext, f: droppedValues}
+                            acceptedData.push(midValue, nextValue) // It may change after this
+                            lastValue = midValue
+                            continue
                         }
                     }
                     acceptedData.push(nextValue) // It may change after this
@@ -195,14 +318,18 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             // Not likely, but there may be some missed data at the end.
             if(missedData.length > 0) {
                 if(lastValue) {
+                    let droppedValues = 0
                     const closeToLast = lastValue.y + proximityThreshold
                     for(const v of missedData) {
                         if(v.f < closeToLast) {
                             regrouped++
                             lastValue.f += v.f
                         } else {
-                            console.warn(`Dropping noise value ${v.y} (${v.f}x)`)
+                            console.warn(`Moving noise value ${v.y} (${v.f}x) down to [${lastValue.y}] ${closeToLast}`)
                         }
+                    }
+                    if(droppedValues != 0) {
+                        acceptedData.push({y: closeToLast, f: droppedValues})
                     }
                 } else {
                     console.warn(`Dropping all ${missedData.length} values`)
