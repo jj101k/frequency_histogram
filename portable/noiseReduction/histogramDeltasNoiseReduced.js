@@ -241,7 +241,6 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                 console.warn(`No accepted values - all ${values.length} dropped`)
                 continue
             }
-            console.log(acceptedValues)
             // Take the proximity threshold as the mean gap between values,
             // which is just (n[max]-n[min])/(sum[n]-1)
             const proximityThreshold = (acceptedValues[acceptedValues.length - 1] - acceptedValues[0]) / (acceptedValues.length - 1)
