@@ -197,32 +197,6 @@ class HistogramDeltasBase {
     /**
      * @protected
      *
-     * Produces the before and after points for a zero-width point, based on
-     * its actual predecessor and, ideally, its actual successor.
-     *
-     * @param {number} lastY
-     * @param {number} current
-     * @param {number | undefined} nextY
-     * @returns
-     */
-    extrapolateAfter(lastY, current, nextY) {
-        return {lastY, nextY: this.afterPoint(lastY, current, nextY)}
-    }
-
-    /**
-     * @protected
-     *
-     * @param {number} current
-     * @param {number} nextY
-     * @returns
-     */
-    extrapolateBefore(current, nextY) {
-        return {lastY: this.beforePoint(current, nextY), nextY}
-    }
-
-    /**
-     * @protected
-     *
      * Steps forward by one zero point, putting the one with the next y value
      * into nextZeroPoint
      *

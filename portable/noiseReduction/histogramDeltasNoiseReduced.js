@@ -1,5 +1,4 @@
 /// <reference path="../histogramDeltasBase.js" />
-/// <reference path="dataSourceZeroWidthNeighbours.js" />
 /// <reference path="../types.d.ts" />
 
 /**
@@ -147,27 +146,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         const sourceScores = Object.entries(acceptedValuesByDS).map(
             ([source, values]) => ({source, score: [...values].reduce((c, v) => c + seenValues[v], 0)}))
         sourceScores.sort((a, b) => b.score - a.score) // Highest score first
-        // From here, we detect the median distance between two points on the
-        // most common source.
-        const topSource = [...acceptedValuesByDS[sourceScores[0].source]].sort((a, b) => a - b)
-        let lastPoint = topSource[0]
-        const diffs = topSource.slice(1).map(v => {const result = v - lastPoint; lastPoint = v; return result})
-        diffs.sort((a, b) => a - b)
-        /**
-         * @type {number}
-         */
-        let distance
-        const midPoint = (diffs.length - 1) / 2
-        if(midPoint % 1 == 0) {
-            // If it's an odd number, we take the one in the middle.
-            distance = diffs[midPoint]
-        } else {
-            // If it's even, we average the two in the middle
-            distance = (diffs[Math.floor(midPoint)] + diffs[Math.floor(midPoint) + 1]) / 2
-        }
 
-        const inRange = diffs.reduce((c, d) => d <= distance ? c + 1 : c, 0)
-        console.debug(`${inRange} of ${diffs.length} gaps are within the expected range`)
+        const precision = this.getPrecision(acceptedValuesByDS[sourceScores[0].source])
 
         // Start at the most popular point, and then go down in popularity,
         // eliminating points within `distance` of any existing point
@@ -177,11 +157,11 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         for(const point of points.slice(1)) {
             const position = this.#binarySearchPoint(acceptedPoints, (a, b) => a - b, point)
             if(position == -1) {
-                if(acceptedPoints[0] - point >= distance) {
+                if(acceptedPoints[0] - point >= precision) {
                     acceptedPoints.splice(position + 1, 0, point)
                 }
             } else if(position == acceptedPoints.length - 1) {
-                if(point - acceptedPoints[acceptedPoints.length - 1] >= distance) {
+                if(point - acceptedPoints[acceptedPoints.length - 1] >= precision) {
                     acceptedPoints.push(point)
                 }
             } else {
@@ -189,12 +169,12 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                 // is after.
                 const before = acceptedPoints[position]
                 const after = acceptedPoints[position + 1]
-                if(after - point >= distance && point - before >= distance) {
+                if(after - point >= precision && point - before >= precision) {
                     acceptedPoints.splice(position + 1, 0, point)
                 }
             }
         }
-        console.log(distance, acceptedPoints)
+        console.log(precision, acceptedPoints)
         return acceptedPoints
     }
 
@@ -226,6 +206,36 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             }
         }
         return lowerBound
+    }
+
+    /**
+     * For the supplied set of possible values, returns the median difference,
+     * ie. the expected precision of the values.
+     *
+     * @param {Iterable<number>} topSourceIn
+     * @returns
+     */
+    static getPrecision(topSourceIn) {
+        const topSource = [...topSourceIn].sort((a, b) => a - b)
+        let lastPoint = topSource[0]
+        const diffs = topSource.slice(1).map(v => { const result = v - lastPoint; lastPoint = v; return result })
+        diffs.sort((a, b) => a - b)
+        /**
+         * @type {number}
+         */
+        let precision
+        const midPoint = (diffs.length - 1) / 2
+        if (midPoint % 1 == 0) {
+            // If it's an odd number, we take the one in the middle.
+            precision = diffs[midPoint]
+        } else {
+            // If it's even, we average the two in the middle
+            precision = (diffs[Math.floor(midPoint)] + diffs[Math.floor(midPoint) + 1]) / 2
+        }
+
+        const inRange = diffs.reduce((c, d) => d <= precision ? c + 1 : c, 0)
+        console.debug(`${inRange} of ${diffs.length} gaps are within the expected range`)
+        return precision
     }
 
     /**
@@ -385,23 +395,9 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
-     * This is where a zero-width point could fit across all data sources. This
-     * will decrease in size as points are enumerated.
-     *
-     * Initially, this is the set of all known points; once a point is certain
-     * not to be useful in placing another zero-width point, it gets dropped.
-     *
-     * Zero-width points would be placed between two of these, typically.
-     *
-     * NOTE: this is only used if the data source doesn't have enough unique
-     * points to be used for that purpose directly.
+     * @type {Record<number, number>}
      */
-    #zeroPointNeighboursAll
-
-    /**
-     * @type {Record<number, DataSourceZeroWidthNeighbours>}
-     */
-    #zeroPointNeighboursBySource
+    #sourcePrecision
 
     /**
      * @type {DeltaDatum[]}
@@ -446,50 +442,11 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      * @returns
      */
     #getZeroPointEdges(zeroPoint) {
-        // We want:
-        // 1. The last whitelist point _before_ this
-        // 2. The whitelist point on this, if applicable - for next time
-        // 3. The whitelist point after this.
-        let zeroPointNeighbours = this.#zeroPointNeighboursBySource[zeroPoint.dataSource]
-
-        if (!zeroPointNeighbours) {
+        const precision = this.#sourcePrecision[zeroPoint.dataSource]
+        if(!precision) {
             throw new Error("Internal error: source is not known")
         }
-
-        if(zeroPointNeighbours.nextPoint >= zeroPoint.y && !zeroPointNeighbours.points.length) {
-            // If we get here, there's only one point left (after the current
-            // zero point), so we can't pick out neighbours. This should only
-            // happen with data sources which only have one point.
-            //
-            // There may still be points in the general list, and if so we'll
-            // use them.
-            zeroPointNeighbours = this.#zeroPointNeighboursAll
-        }
-
-        /**
-         * A point which is before the current point and (where possible) is in
-         * the whitelist.
-         */
-        let whitelistPointBefore = zeroPointNeighbours.getLastPointBefore(zeroPoint.y)
-        if(whitelistPointBefore === null) {
-            if(zeroPointNeighbours.nextPoint > zeroPoint.y) {
-                throw new Error(`Internal error: no points were found before ${zeroPoint.y} [${zeroPointNeighbours.debugMin}..${zeroPointNeighbours.debugMax}]`)
-            }
-            // This can legitimately happen if a zero point is also the lowest
-            // point in the accepted set. Where that's true, we make one up
-            // that's earlier.
-
-            /**
-             * @todo improve this to assume that the lower bound is genuinely
-             * the lower bound.
-             */
-            whitelistPointBefore = this.beforePoint(zeroPoint.y, zeroPointNeighbours.higherPoint)
-        }
-
-        /**
-         * @todo improve this to properly respect the upper bound
-         */
-        return this.extrapolateAfter(whitelistPointBefore, zeroPoint.y, zeroPointNeighbours.possibleHigherPoint)
+        return {lastY: zeroPoint.y - precision, nextY: zeroPoint.y + precision}
     }
 
     buildCombined() {
@@ -525,19 +482,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
      */
     constructor(deltaInfo, numberOptions, valueWhitelistBySource) {
         super(deltaInfo, numberOptions)
-        /**
-         * @type {Record<number, DataSourceZeroWidthNeighbours>}
-         */
-        const zeroPointNeighboursBySource = {}
-        const allPoints = new Set()
-        for(const [ds, whitelist] of Object.entries(valueWhitelistBySource)) {
-            for(const p of whitelist) {
-                allPoints.add(p)
-            }
-            zeroPointNeighboursBySource[+ds] = new DataSourceZeroWidthNeighbours(whitelist)
-        }
-        this.#zeroPointNeighboursBySource = zeroPointNeighboursBySource
-        this.#zeroPointNeighboursAll = new DataSourceZeroWidthNeighbours([...allPoints].sort((a, b) => a - b))
-        console.log("Initial points", valueWhitelistBySource)
+        this.#sourcePrecision = Object.fromEntries(Object.entries(valueWhitelistBySource).map(
+            ([ds, whitelist]) => [ds, HistogramDeltasNoiseReduced.getPrecision(whitelist)]
+        ))
     }
 }
