@@ -152,7 +152,10 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             // If it's even, we average the two in the middle
             distance = (diffs[Math.floor(midPoint)] + diffs[Math.floor(midPoint) + 1]) / 2
         }
-        // FIXME sanity check - verify how many are within that distance.
+
+        const inRange = diffs.reduce((c, d) => d <= distance ? c + 1 : c, 0)
+        console.debug(`${inRange} of ${diffs.length} gaps are within the expected range`)
+
         // Start at the most popular point, and then go down in popularity,
         // eliminating points within `distance` of any existing point
         const points = Object.entries(seenValues).sort(([va, pa], [vb, pb]) => pb - pa).map(([v]) => +v)
