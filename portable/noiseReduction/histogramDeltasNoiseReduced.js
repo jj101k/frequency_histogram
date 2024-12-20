@@ -159,7 +159,6 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         const mostPopularPoint = points[0]
         const acceptedPoints = [mostPopularPoint]
         for(const point of points.slice(1)) {
-            // Lots of work needed here FIXME
             const position = this.#binarySearchPoint(acceptedPoints, (a, b) => a - b, point)
             if(position == -1) {
                 if(acceptedPoints[0] - point >= distance) {
@@ -251,24 +250,41 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
              * @type {ValueFrequency[]}
              */
             const acceptedData = []
+            /**
+             * @type {number | undefined}
+             */
+            let previousAcceptedPoint
             for(const value of values) {
                 // Skip past accepted points lower than this one
                 while(acceptedValues.length > 0 && acceptedValues[0] < value.y) {
+                    previousAcceptedPoint = acceptedValues[0]
                     acceptedValues.shift()
                 }
+
                 // Note: from above, we know that acceptedValues[0] >= value.y
                 if(acceptedValues[0] === undefined || acceptedValues[0] > value.y) {
                     missedData.push(value)
                 } else {
                     const nextValue = {...value}
-                    if(lastValue) {
-                        const midPoint = (lastValue.y + nextValue.y) / 2
-                        const closeToLast = Math.min(midPoint, lastValue.y + proximityThreshold)
+                    if(previousAcceptedPoint !== undefined) {
+                        /**
+                         * @type {ValueFrequency}
+                         */
+                        let lowValue
+                        if(lastValue && previousAcceptedPoint == lastValue.y) {
+                            lowValue = lastValue
+                        } else {
+                            // Push it.
+                            lowValue = {y: previousAcceptedPoint, f: 0}
+                            acceptedData.push(lowValue)
+                        }
+                        const midPoint = (lowValue.y + nextValue.y) / 2
+                        const closeToLast = Math.min(midPoint, lowValue.y + proximityThreshold)
                         const closeToNext = Math.max(nextValue.y - proximityThreshold, midPoint)
                         let droppedValues = 0
                         for(const v of missedData) {
                             if(v.f < closeToLast) {
-                                lastValue.f += v.f
+                                lowValue.f += v.f
                                 regrouped++
                             } else if(v.f > closeToNext) {
                                 nextValue.f += v.f
@@ -317,15 +333,26 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
 
             // Not likely, but there may be some missed data at the end.
             if(missedData.length > 0) {
-                if(lastValue) {
+                if(previousAcceptedPoint !== undefined) {
+                    /**
+                     * @type {ValueFrequency}
+                     */
+                    let lowValue
+                    if(lastValue && previousAcceptedPoint == lastValue.y) {
+                        lowValue = lastValue
+                    } else {
+                        // Push it.
+                        lowValue = {y: previousAcceptedPoint, f: 0}
+                        acceptedData.push(lowValue)
+                    }
                     let droppedValues = 0
-                    const closeToLast = lastValue.y + proximityThreshold
+                    const closeToLast = lowValue.y + proximityThreshold
                     for(const v of missedData) {
                         if(v.f < closeToLast) {
                             regrouped++
-                            lastValue.f += v.f
+                            lowValue.f += v.f
                         } else {
-                            console.warn(`Moving noise value ${v.y} (${v.f}x) down to [${lastValue.y}] ${closeToLast}`)
+                            console.warn(`Moving noise value ${v.y} (${v.f}x) down to [${lowValue.y}] ${closeToLast}`)
                         }
                     }
                     if(droppedValues != 0) {
