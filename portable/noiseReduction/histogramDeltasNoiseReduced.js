@@ -33,13 +33,19 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
     }
 
     /**
-     * This is part of the noise reduction system. Values which look like they
-     * are not noise are grouped and returned.
+     * This deals with data which is at a fixed precision ("rounded to the
+     * nearest <x>") but isn't always accurately represented, and emits what
+     * those fixed precision points should have been for the data.
+     *
+     * This is designed specifically for mixes of data where different sources
+     * may have been rounding to different unit boundaries, eg. you might get 1,
+     * 2, 2.54, 3, 4, 5, 5.08, 6 if you mix inches and centimetres. The most
+     * widely used points in the data set will be retained.
      *
      * @param {Record<number, ValueFrequency[]>} orderedFrequenciesRealByDS
      * These must be in ascending numeric order
      * @param {valueConfiguration} valueConfig
-     * @returns
+     * @returns The fixed precision points for each source
      */
     static getAcceptedValues(orderedFrequenciesRealByDS, valueConfig) {
         /**
