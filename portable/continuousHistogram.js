@@ -1,4 +1,4 @@
-/// <reference path="histogramDeltas.js" />
+/// <reference path="noiseReduction/histogramDeltasNoiseReduced.js" />
 /// <reference path="types.d.ts" />
 
 /**
@@ -37,10 +37,16 @@ class ContinuousHistogram {
         )
         return orderedFrequenciesReal
     }
+
+    /**
+     *
+     */
+    #bounds
+
     /**
      * @type {DeltaInfo | undefined}
      */
-    #deltaInfo
+    #deltaInfoCache
 
     /**
      * @see expectedPrecision
@@ -64,10 +70,20 @@ class ContinuousHistogram {
 
     /**
      *
+     */
+    get #deltaInfo() {
+        if(!this.#deltaInfoCache) {
+            this.#deltaInfoCache = this.#getDeltas()
+        }
+        return this.#deltaInfoCache
+    }
+
+    /**
+     *
      * @returns {DeltaInfo}
      */
     #getDeltas() {
-        const dataPoints = this.rawValues
+        const dataPoints = this.#values
 
         // Special case: exactly one point
         if(this.#length == 1) {
@@ -193,25 +209,18 @@ class ContinuousHistogram {
     }
 
     /**
-     * @protected
-     */
-    bounds
-
-    /**
-     * @protected
-     */
-    get deltaInfo() {
-        if(!this.#deltaInfo) {
-            this.#deltaInfo = this.#getDeltas()
-        }
-        return this.#deltaInfo
-    }
-
-    /**
      * This provides the deltas with all values with the same y value combined.
      */
     get combined() {
-        return new HistogramDeltas(this.deltaInfo, this.bounds).combined
+        const orderedFrequencies = ContinuousHistogram.getOrderedFrequencies(this.#values)
+        // We go into noise reduction if we can.
+        if(orderedFrequencies && Object.keys(orderedFrequencies).length > 1) {
+            const deltaInfo = this.#deltaInfo
+            return new HistogramDeltasNoiseReduced(deltaInfo, this.#bounds,
+                HistogramDeltasNoiseReduced.getAcceptedValues(orderedFrequencies, this.fieldInfo.field)).combined
+        } else {
+            return new HistogramDeltas(this.#deltaInfo, this.#bounds).combined
+        }
     }
 
     /**
@@ -240,7 +249,7 @@ class ContinuousHistogram {
     get expectedPrecision() {
         let expectedPrecision = this.#expectedPrecisionCache
         if(expectedPrecision === undefined) {
-            const dataPoints = this.rawValues
+            const dataPoints = this.#values
             /**
              * @type {Set<number>}
              */
@@ -280,14 +289,7 @@ class ContinuousHistogram {
     }
     set fieldInfo(v) {
         this.#fieldInfo = v
-        this.#deltaInfo = undefined
-    }
-
-    /**
-     *
-     */
-    get rawValues() {
-        return this.#values
+        this.#deltaInfoCache = undefined
     }
 
     /**
@@ -304,7 +306,7 @@ class ContinuousHistogram {
     constructor(values, length, bounds, expectedPrecision) {
         this.#values = values
         this.#length = length
-        this.bounds = bounds
+        this.#bounds = bounds
         this.#expectedPrecisionCache = expectedPrecision
     }
 }

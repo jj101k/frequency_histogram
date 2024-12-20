@@ -1,5 +1,4 @@
 /// <reference path="portable/continuousHistogram.js" />
-/// <reference path="portable/noiseReduction/continuousHistogramNoiseReduced.js" />
 /// <reference path="epwDataFormat.js" />
 /// <reference path="epwParser.js" />
 /// <reference path="portable/types.d.ts" />
@@ -43,9 +42,8 @@ class Histogram {
      */
     get #continuous() {
         const numberOptions = (this.#fieldInfo.field instanceof EpwNamedConstrainedNumberField) ? this.#fieldInfo.field.options : undefined
-        const continuous = this.#noiseReduction ?
-            new ContinuousHistogramNoiseReduced(this.rawValues, this.rawValues.length, numberOptions, this.#fieldInfo.expectedMinResolution) :
-            new ContinuousHistogram(this.rawValues, this.rawValues.length, numberOptions, this.#fieldInfo.expectedMinResolution)
+        const continuous = new ContinuousHistogram(this.rawValues, this.rawValues.length, numberOptions,
+            this.#fieldInfo.expectedMinResolution)
         continuous.fieldInfo = this.#fieldInfo
         return continuous
     }
