@@ -53,6 +53,10 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
             new LogValueScaler() :
             new LinearValueScaler()
         /**
+         * @type {{previous: ValueFrequency, dropped: ValueFrequency}[]}
+         */
+        const dropped = []
+        /**
          * @type {{[dataSource: number]: Set<number>}} Which values look valid
          * on each data source
          */
@@ -95,7 +99,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
 
             while((v = orderedFrequenciesMapped.shift())) {
                 if(this.#looksLikeNoise(v, previous, orderedFrequenciesMapped)) {
-                    console.log(`Dropping value ${v.y} (${v.f}x; from ${previous.y} (${previous.f}x), with [${orderedFrequenciesMapped.length} entries] above)`)
+                    dropped.push({previous, dropped: v})
                     continue
                 }
                 previous = v
@@ -107,6 +111,9 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
                 throw new Error(`Internal error: noise reduction produced ${acceptedValues.size} values from ${orderedFrequenciesReal.length}`)
             }
             acceptedValuesByDS[ds] = acceptedValues
+        }
+        if(dropped.length) {
+            console.debug(dropped)
         }
 
         return acceptedValuesByDS
