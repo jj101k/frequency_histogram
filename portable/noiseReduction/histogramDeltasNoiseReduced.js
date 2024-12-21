@@ -446,7 +446,8 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         if(!precision) {
             throw new Error("Internal error: source is not known")
         }
-        return {lastY: zeroPoint.y - precision, nextY: zeroPoint.y + precision}
+        const offset = Math.random() * precision
+        return {lastY: zeroPoint.y - offset, nextY: zeroPoint.y - offset + 2 * precision}
     }
 
     buildCombined() {

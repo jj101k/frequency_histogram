@@ -63,10 +63,6 @@ class HistogramDeltasBase {
             return null
         }
         const out = { ...v0 }
-        while (this.#zeroWidthPoints.length && this.#zeroWidthPoints[0].y == v0.y) {
-            out.zeroSpan += this.#zeroWidthPoints[0].zeroSpan
-            this.#zeroWidthPoints.shift()
-        }
         return out
     }
 
