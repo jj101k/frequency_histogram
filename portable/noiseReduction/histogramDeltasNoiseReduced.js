@@ -414,17 +414,21 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         if (!zeroPoint) {
             throw new Error("Internal error")
         }
-        const { lastY, nextY } = this.#getZeroPointEdges(zeroPoint)
+        const { lastY: lastYCombined, nextY: nextYCombined } = this.#getZeroPointEdges(zeroPoint)
 
-        // Assume that it's oscillating just enough to not be detected (ie, +/-
-        // half the minimum distance). This "flattens" the infinitely high point
-        // into a
-        const [lowZeroPoint, highZeroPoint] = [
-            { y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / (nextY - lastY) },
-            { y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / (nextY - lastY) },
-        ]
-        // Now we have the answer we can push the values
-        this.#zeroDeltas.push(lowZeroPoint, highZeroPoint)
+        for(let i = 0; i < zeroPoint.count; i++) {
+            const nextY = lastYCombined + (zeroPoint.y - lastYCombined) * i / zeroPoint.count
+            const lastY = zeroPoint.y + (nextYCombined - zeroPoint.y) * i / zeroPoint.count
+            // Assume that it's oscillating just enough to not be detected (ie, +/-
+            // half the minimum distance). This "flattens" the infinitely high point
+            // into a more manageable bar.
+            const [lowZeroPoint, highZeroPoint] = [
+                { y: (lastY + zeroPoint.y) / 2, dF: zeroPoint.zeroSpan / ((nextY - lastY) * zeroPoint.count) },
+                { y: (nextY + zeroPoint.y) / 2, dF: -zeroPoint.zeroSpan / ((nextY - lastY) * zeroPoint.count) },
+            ]
+            // Now we have the answer we can push the values
+            this.#zeroDeltas.push(lowZeroPoint, highZeroPoint)
+        }
         this.getNextZeroPoint()
     }
 
@@ -446,8 +450,7 @@ class HistogramDeltasNoiseReduced extends HistogramDeltasBase {
         if(!precision) {
             throw new Error("Internal error: source is not known")
         }
-        const offset = Math.random() * precision
-        return {lastY: zeroPoint.y - offset, nextY: zeroPoint.y - offset + 2 * precision}
+        return {lastY: zeroPoint.y - precision, nextY: zeroPoint.y + precision}
     }
 
     buildCombined() {

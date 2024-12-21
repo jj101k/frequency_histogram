@@ -62,7 +62,12 @@ class HistogramDeltasBase {
         if (!v0) {
             return null
         }
-        const out = { ...v0 }
+        const out = { ...v0, count: 1 }
+        while (this.#zeroWidthPoints.length && this.#zeroWidthPoints[0].y == v0.y) {
+            out.zeroSpan += this.#zeroWidthPoints[0].zeroSpan
+            out.count++
+            this.#zeroWidthPoints.shift()
+        }
         return out
     }
 

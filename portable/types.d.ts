@@ -4,6 +4,10 @@
  */
 interface ZeroWidthPoint {
     /**
+     * How many data points combined to produce this
+     */
+    readonly count: number
+    /**
      *
      */
     readonly dataSource: number
